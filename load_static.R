@@ -24,6 +24,11 @@ load.anno <- function(filepath){
 }
 
 args <- commandArgs(trailingOnly=TRUE)
+
+snp.anno <- load.anno(args[4])
+exp.anno <- load.anno(args[5])
+
+
 if(!all(file.exists(args[2:5]))){
   badfiles <- args[2:5][!file.exists(args[2:5])]
   stop(paste0("file not found: ",badfiles))
@@ -44,4 +49,4 @@ if(args[1]=="T"){
   snps <- SlicedData$new(load.data.matrix(args[2]))
   gene <- SlicedData$new(load.data.matrix(args[3]))
 }
-  save(list(snp=snps,exp=gene,snp.loc=load.anno(args[4]),exp.loc=load.anno(args[5])),file=args[6])
+  save(list(snp=snps,exp=gene,snp.loc=snp.anno,exp.loc=exp.anno),file=args[6])
