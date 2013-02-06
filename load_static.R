@@ -49,4 +49,5 @@ if(args[1]=="T"){
   snps <- SlicedData$new(load.data.matrix(args[2]))
   gene <- SlicedData$new(load.data.matrix(args[3]))
 }
-  save(list(snp=snps,exp=gene,snp.loc=snp.anno,exp.loc=exp.anno),file=args[6])
+print(ls())
+save(list(snp=snps,exp=gene,snp.loc=snp.anno,exp.loc=exp.anno),file=args[6])
