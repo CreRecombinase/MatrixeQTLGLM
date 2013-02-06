@@ -4,6 +4,7 @@
 library(MatrixEQTL)
 library(sqldf)
 
+datlist <- list()
 
 #Usage  <Use_MatrixEQTL_FileReader(T|F)> <SNP_File> <Expression_File > <SNP_Annotation_File> <Expression_Annotation_File> <Output_Rdata_Path>
 #Returns a list in that order
@@ -25,8 +26,8 @@ load.anno <- function(filepath){
 
 args <- commandArgs(trailingOnly=TRUE)
 
-snp.anno <- load.anno(args[4])
-exp.anno <- load.anno(args[5])
+datlist$snp.anno <- load.anno(args[4])
+datlist$exp.anno <- load.anno(args[5])
 
 
 if(!all(file.exists(args[2:5]))){
@@ -37,17 +38,17 @@ if(!all(file.exists(args[2:5]))){
 
 
 if(args[1]=="T"){
-  snps <- SlicedData$new()
-  snps$fileDelimiter <- "\t"
-  snps$fileOmitCharacters <- "null"
-  snps$fileSkipRows <- 1
-  snps$fileSkipColumns <- 1
-  snps$LoadFile(args[2])
+  datlist[["snps"]] <- SlicedData$new()
+  datlist[["snps"]]$fileDelimiter <- "\t"
+  datlist[["snps"]]$fileOmitCharacters <- "null"
+  datlist[["snps"]]$fileSkipRows <- 1
+  datlist[["snps"]]$fileSkipColumns <- 1
+  datlist[["snps"]]$LoadFile(args[2])
   
-  gene <- SlicedData$new(load.data.matrix(args[3])) 
+  datlist[["gene"]] <- SlicedData$new(load.data.matrix(args[3])) 
 }else{
-  snps <- SlicedData$new(load.data.matrix(args[2]))
-  gene <- SlicedData$new(load.data.matrix(args[3]))
+  datlist[["snps"]] <- SlicedData$new(load.data.matrix(args[2]))
+  datlist[["gene"]] <- SlicedData$new(load.data.matrix(args[3]))
 }
 print(ls())
-save(list(snp=snps,exp=gene,snp.loc=snp.anno,exp.loc=exp.anno),file=args[6])
+save(datlist,file=args[6])
