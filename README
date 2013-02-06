@@ -15,4 +15,5 @@ Functions
 
 
 Processing samples
-  Matrix eQTL needs to be run on subsampled SNP and expression matrices.  This is complicated due to the sampling with replacement, as MatrixEQTL returns an error when a matrix has duplicated columns.  Possible solutions are to sample without replacement, or to create new names for the columns, and then 
+  Matrix eQTL needs to be run on subsampled SNP and expression matrices.  This is complicated due to the sampling with replacement, as MatrixEQTL returns an error when a matrix has duplicated columns.  Possible solutions are to sample without replacement, or to create new names for the columns, and then rework which samples are which
+  Instead, we're simply going to sample without replacement.

@@ -2,6 +2,7 @@
 ##Script to read in static data and save it to a Rdata file 
 #nifty, as it reads from the command line
 library(MatrixEQTL)
+library(sqldf)
 
 
 #Usage  <Use_MatrixEQTL_FileReader(T|F)> <SNP_File> <Expression_File > <SNP_Annotation_File> <Expression_Annotation_File> <Output_Rdata_Path>
