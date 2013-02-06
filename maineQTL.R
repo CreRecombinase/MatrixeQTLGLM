@@ -16,13 +16,6 @@ snp.loc.fp <- "matrixSNPlocations.txt"
 exp.loc.fp <- "L3genelocs.txt"
 
 
-brca.dat <- list(snp=SlicedData$new(load.data.matrix(snp.filepath)),exp=SlicedData$new(load.data.matrix(exp.filepath)),exp.loc=load.anno(exp.loc.fp),snp.loc=load.anno(snp.loc.fp))
-
-
-
-
-
-
 
 s1<-sample(c(1:n),pts,replace=T)
 for(i in 1:n){

@@ -8,7 +8,6 @@ library(sqldf)
 #Usage  <Use_MatrixEQTL_FileReader(T|F)> <SNP_File> <Expression_File > <SNP_Annotation_File> <Expression_Annotation_File> <Output_Rdata_Path>
 #Returns a list in that order
 
-
 #Helper Functions
 load.data.matrix <- function(filepath){
   #Reads in data matrices
@@ -25,6 +24,11 @@ load.anno <- function(filepath){
 }
 
 args <- commandArgs(trailingOnly=TRUE)
+if(!all(file.exists(args[2:5]))){
+  badfiles <- args[2:5][!file.exists(args[2:5])]
+  stop(paste0("file not found: ",badfiles))
+}
+  
 
 
 if(args[1]=="T"){
