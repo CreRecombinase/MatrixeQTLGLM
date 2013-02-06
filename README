@@ -1,0 +1,18 @@
+High level overview of functions for MatrixeQTL/glmnet
+Prioritize correctness,modularity,and readability (in that order)
+
+Functions
+  Read in SNP data
+    This function could utilize two methods:
+      Read in SNP data that can be relatively easily be loaded into memory (sqldf)
+      Read in SNP data that is too large to be read into memory (either matrixEQTL or memory mapped file)
+
+  Read in expression data
+    sqldf
+
+  subsample function
+    given a number of samples to hold out for training and testing, create training and testing set in list form
+
+
+Processing samples
+  Matrix eQTL needs to be run on subsampled SNP and expression matrices.  This is complicated due to the sampling with replacement, as MatrixEQTL returns an error when a matrix has duplicated columns.  Possible solutions are to sample without replacement, or to create new names for the columns, and then 
