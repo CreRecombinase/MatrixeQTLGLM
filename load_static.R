@@ -29,7 +29,7 @@ args <- commandArgs(trailingOnly=TRUE)
 if(args[1]=="T"){
   snps <- SlicedData$new()
   snps$fileDelimiter <- "\t"
-  snps$fileOmitCharacters <- "-1"
+  snps$fileOmitCharacters <- "null"
   snps$fileSkipRows <- 1
   snps$fileSkipColumns <- 1
   snps$LoadFile(args[2])
