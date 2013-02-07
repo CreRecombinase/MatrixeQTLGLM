@@ -27,9 +27,10 @@ if(!file.exists(datfile)){
   load(datfile)
 }
 
-snp.exp <- list(snps=datlist$snps,exp=datlist$gene)
-save(snp.exp,file="static2.Rdata")
-
+if(!file.exists("static2.Rdata")){
+  snp.exp <- list(snps=datlist$snps,exp=datlist$gene)
+  save(snp.exp,file="static2.Rdata")
+}
 ###Function for cross validation
 
 mat.train <- function(snp.exploc,train.indices,MEQTL.params){
