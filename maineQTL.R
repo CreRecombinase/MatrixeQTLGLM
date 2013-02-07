@@ -75,7 +75,7 @@ MEQTL.params <- list(
   snpspos = datlist[["snp.anno"]],
   genepos = datlist[["exp.anno"]],
   cisDist=1e6,
-  pvalue.hist=F,
+  pvalue.hist=F
 )
 
 m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp_type),tmpdir=out.dir)
