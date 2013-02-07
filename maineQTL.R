@@ -55,7 +55,7 @@ mat.train <- function(snpdat,expdat,train.indices,MEQTL.params){
   
 }
 
-samples <- datfile[["snps"]]$nCol()
+samples <- datlist[["snps"]]$nCol()
 
 train.indices <- chunk(rep(1:samples,9),n.chunks=9)
 #57 is a factor of 513, the number of samples
@@ -74,8 +74,8 @@ MEQTL.params <- list(
   pvOutputThreshold.cis=1e-8,
   snpspos = datlist[["snp.anno"]],
   genepos = datlist[["exp.anno"]],
-  cisDist=1e6
-  pvalue.hist=F
+  cisDist=1e6,
+  pvalue.hist=F,
 )
 
 m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp_type),tmpdir=out.dir)
