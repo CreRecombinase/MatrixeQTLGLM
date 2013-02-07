@@ -86,37 +86,3 @@ batchMap(MEQTL.reg,mat.train,train.indices=train.indices,more.args=list(snpdat=d
 
 submitJobs(MEQTL.reg)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-s1<-sample(c(1:n),pts,replace=T)
-for(i in 1:n){
-  exp.train<-exp[s1!=i,]
-  snp.train<-snp[s1!=i,]
-  exp.test<-exp[s1==i,]M
-  snp.test<-snp[s1==i,]
-  
-  matrix.eqtl.out<-matrix.eqtl(snp.train,exp.train)
-  activeSNPs<-SNPs that are in at least one interaction in matrix.eqtl.out at some threshold
-  activeGenes<-genes in at least one interaction
-  for(j in 1:length(activeGenes)){
-    x=snp.train[,activeSNPsForGenej]
-    y=exp.train[,activeGenes[j]]
-    cv1<-cv.glmnet(x=x,y=y)
-    fit1<-glmnet(x=x,y=y,lambda=cv1$lambda.1se)
-    test.x<-snp.test[,activeSNPsForGenej]
-    predMatrix[s1==i,colnames(predMatrix)[j]]<-predict(fit1,newx=test.x)
-  }
-}
-## Now, we can compute mean squared errors...   
-
