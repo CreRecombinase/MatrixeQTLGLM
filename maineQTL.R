@@ -82,7 +82,7 @@ MEQTL.params <- list(
   pvalue.hist=F
 )
 
-m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp_type),tmpdir=out.dir)
+m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp.type),tmpdir=out.dir)
 
 MEQTL.reg <- makeRegistry(paste0("meqtl_reg_",cancer.type),file.dir=m.dir,packages="MatrixEQTL")
 
