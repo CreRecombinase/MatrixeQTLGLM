@@ -12,7 +12,7 @@ root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
 out.dir <- paste0(root.dir,"MEQTL_outputs/")
 
 setwd(root.dir)
-snp.filepath <- paste(snp.type,,cancer.type,"snp.txt",sep="_")
+snp.filepath <- paste(snp.type,cancer.type,"snp.txt",sep="_")
 exp.filepath <- paste(cancer.type,"expression.txt",sep="_")
 
 snp.loc.fp <- paste(snp.type,cancer.type,"snp_anno.txt",sep="_")
@@ -34,7 +34,7 @@ mat.train <- function(snpdat,expdat,train.indices,MEQTL.params){
   kf <- sort(setdiff(train.indices,1:total.ids))
   snpdat$ColumnSubsample(train.indices)
   expdat$ColumnSubsample(train.indices)
-  with(MEQTL.params
+  with(MEQTL.params,
     Matrix_eQTL_main(
       snps=snpdat,
       gene=expdat,
