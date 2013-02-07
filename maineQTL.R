@@ -55,7 +55,7 @@ mat.train <- function(snpdat,expdat,train.indices,MEQTL.params){
   
 }
 
-samples <- datlist[["snps"]]$nCol()
+samples <- datlist[["snps"]]$nCols()
 
 train.indices <- chunk(rep(1:samples,9),n.chunks=9)
 #57 is a factor of 513, the number of samples
