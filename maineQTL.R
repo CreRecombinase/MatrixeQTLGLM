@@ -27,6 +27,9 @@ if(!file.exists(datfile)){
   load(datfile)
 }
 
+snp.exp <- list(snps=datfile$snps,exp=datfile$gene)
+save(snp.exp,file="")
+
 ###Function for cross validation
 
 mat.train <- function(snpdat,expdat,train.indices,MEQTL.params){
@@ -75,7 +78,7 @@ MEQTL.params <- list(
   snpspos = datlist[["snp.anno"]],
   genepos = datlist[["exp.anno"]],
   cisDist=1e6,
-  pvalue.hist=F,
+  pvalue.hist=F
 )
 
 m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp_type),tmpdir=out.dir)
