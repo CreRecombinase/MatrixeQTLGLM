@@ -27,20 +27,21 @@ if(!file.exists(datfile)){
   load(datfile)
 }
 
-snp.exp <- list(snps=datfile$snps,exp=datfile$gene)
-save(snp.exp,file="")
+snp.exp <- list(snps=datlist$snps,exp=datlist$gene)
+save(snp.exp,file="static2.Rdata")
 
 ###Function for cross validation
 
-mat.train <- function(snpdat,expdat,train.indices,MEQTL.params){
-  total.ids <- snpdat$nCol()
+mat.train <- function(snp.exploc,train.indices,MEQTL.params){
+  load(snp.exploc)
+  total.ids <- snp.exp$snps$nCol()
   kf <- sort(setdiff(train.indices,1:total.ids))
-  snpdat$ColumnSubsample(train.indices)
-  expdat$ColumnSubsample(train.indices)
+  snp.exp$snps$ColumnSubsample(train.indices)
+  snp.exp$exp$ColumnSubsample(train.indices)
   with(MEQTL.params,
     Matrix_eQTL_main(
-      snps=snpdat,
-      gene=expdat,
+      snps=snp.exp$snps,
+      gene=snp.exp$exp,
       cvrt=cvrt,
       output_file_name=paste0(output.file.name.tra,kf,".txt"),
       output_file_name.cis=paste0(output.file.name.cis,kf,".txt"),
@@ -85,7 +86,7 @@ m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp_type),tmpdir=out.dir)
 
 MEQTL.reg <- makeRegistry(paste0("meqtl_reg_",cancer.type),file.dir=m.dir,packages="MatrixEQTL")
 
-batchMap(MEQTL.reg,mat.train,train.indices=train.indices,more.args=list(snpdat=datlist[["snps"]],expdata=datlist[["gene"]],MEQTL.params=MEQTL.params))
+batchMap(MEQTL.reg,mat.train,train.indices=train.indices,more.args=list(MEQTL.params=MEQTL.params,snp.exploc="/scratch/nwk2/glm_eqtl/MatrixeQTLGLM/static2.Rdata"))
 
 submitJobs(MEQTL.reg)
 
