@@ -9,7 +9,7 @@ library(MatrixEQTL)
 snp.type <- "unimputed"
 cancer.type <- "brca"
 root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
-out.dir <- paste0(root.dir,"MEQTL_outputs/")
+out.dir <- paste0(root.dir,"mEQTL_outputs/")
 
 setwd(root.dir)
 snp.filepath <- paste(snp.type,cancer.type,"snp.txt",sep="_")
