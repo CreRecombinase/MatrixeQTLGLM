@@ -50,8 +50,8 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
       verbose=verbose,
       pvOutputThreshold=pvOutputThreshold.tra,
       pvOutputThreshold.cis=pvOutputThreshold.cis,
-      snpspos=snpspos,
-      genepos=genepos,
+      snpspos=annolist$snp.anno,
+      genepos=annolist$exp.anno,
       cisDist=cisDist,
       pvalue.hist=pvalue.hist
     )
