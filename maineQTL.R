@@ -90,5 +90,5 @@ MEQTL.reg <- makeRegistry(paste0("meqtl_reg_",cancer.type),file.dir=m.dir,packag
 
 batchMap(MEQTL.reg,mat.train,train.indices=train.indices,more.args=list(MEQTL.params=MEQTL.params,snp.exploc="/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/static2.Rdata"))
 
-submitJobs(MEQTL.reg)
+#submitJobs(MEQTL.reg)
 
