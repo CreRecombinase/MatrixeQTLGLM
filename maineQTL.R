@@ -62,6 +62,7 @@ mat.train <- function(snp.exploc,train.indices,MEQTL.params){
 
 samples <- datlist$ncols
 
+
 train.indices <- chunk(rep(1:samples,9),n.chunks=9)
 #57 is a factor of 513, the number of samples
 test.indices <- chunk(1:samples,chunk.size=57)
@@ -87,7 +88,7 @@ m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp.type),tmpdir=out.dir)
 
 MEQTL.reg <- makeRegistry(paste0("meqtl_reg_",cancer.type),file.dir=m.dir,packages="MatrixEQTL")
 
-batchMap(MEQTL.reg,mat.train,train.indices=train.indices,more.args=list(MEQTL.params=MEQTL.params,snp.exploc="/scratch/nwk2/glm_eqtl/MatrixeQTLGLM/static2.Rdata"))
+batchMap(MEQTL.reg,mat.train,train.indices=train.indices,more.args=list(MEQTL.params=MEQTL.params,snp.exploc="/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/static2.Rdata"))
 
 submitJobs(MEQTL.reg)
 

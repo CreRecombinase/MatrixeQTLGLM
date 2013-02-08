@@ -6,6 +6,7 @@ library(sqldf)
 
 datlist <- list()
 
+
 #Usage  <Use_MatrixEQTL_FileReader(T|F)> <SNP_File> <Expression_File > <SNP_Annotation_File> <Expression_Annotation_File> <Output_Rdata_Path>
 #Returns a list in that order
 
