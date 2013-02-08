@@ -1,14 +1,32 @@
 #!/home/nwk2/R-2.15.2/bin/Rscript
-##Script to read in static data and save it to a Rdata file 
+##Script to read in static data and save it to two Rdata files
 #nifty, as it reads from the command line
 library(MatrixEQTL)
 library(sqldf)
 
-datlist <- list()
+annolist <- list()
+snp.exp <- list()
 
 
-#Usage  <Use_MatrixEQTL_FileReader(T|F)> <SNP_File> <Expression_File > <SNP_Annotation_File> <Expression_Annotation_File> <Output_Rdata_Path>
+#Usage <SNPEXP|ANNO>  (If Using arg SNPEXP) <Use_MatrixEQTL_FileReader(T|F)> <SNP_File> <Expression_File> <Output_Rdata_Path>
 #Returns a list in that order
+oargs <- commandArgs(trailingOnly=TRUE)
+args <- list()
+args$EXPANNO <- oargs[1]
+if(args$EXPANNO=="ANNO"){
+  args$SNP <- oargs[2]
+  args$EXP <- oargs[3]
+  args$dpath <- oargs[4]
+}else if(args$EXPANNO=="SNPEXP"){
+  args$MEQTL <- oargs[2]
+  args$SNP <- oargs[3]
+  args$EXP <- oargs[4]
+  args$dpath <- oargs[5]
+}else{
+  stop(args)
+}
+
+
 
 #Helper Functions
 load.data.matrix <- function(filepath){
@@ -18,38 +36,31 @@ load.data.matrix <- function(filepath){
   rawdat <- rawdat[,-1]
   rawdat <- data.matrix(rawdat)
   colnames(rawdat)<- gsub("_","-",colnames(rawdat))
-  return(rawdat)
+  return(data.matrix(rawdat))
 }
 load.anno <- function(filepath){
   #Reads in Annotations
   read.csv.sql(filepath,sep="\t",header=T,eol="\n")
 }
 
-args <- commandArgs(trailingOnly=TRUE)
+if(args$EXPANNO=="ANNO"){
+annolist$snp.anno <- load.anno(args$SNP)
+annolist$exp.anno <- load.anno(args$EXP)
+save(annolist,file=args$dpath)
 
-datlist$snp.anno <- load.anno(args[4])
-datlist$exp.anno <- load.anno(args[5])
-
-
-if(!all(file.exists(args[2:5]))){
-  badfiles <- args[2:5][!file.exists(args[2:5])]
-  stop(paste0("file not found: ",badfiles))
+}else {
+  if(args$MEQTL=="T"){
+    snp.exp[["snps"]] <- SlicedData$new()
+    snp.exp[["snps"]]$fileDelimiter <- "\t"
+    snp.exp[["snps"]]$fileOmitCharacters <- "null"
+    snp.exp[["snps"]]$fileSkipRows <- 1
+    snp.exp[["snps"]]$fileSkipColumns <- 1
+    snp.exp[["snps"]]$LoadFile(args$SNP)
+    snp.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP)) 
+  }else{
+    snp.exp[["snps"]] <- SlicedData$new(load.data.matrix(args$SNP))
+    snp.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP))
+  }
+  save(snp.exp,file=args$dpath)
 }
-  
 
-
-if(args[1]=="T"){
-  datlist[["snps"]] <- SlicedData$new()
-  datlist[["snps"]]$fileDelimiter <- "\t"
-  datlist[["snps"]]$fileOmitCharacters <- "null"
-  datlist[["snps"]]$fileSkipRows <- 1
-  datlist[["snps"]]$fileSkipColumns <- 1
-  datlist[["snps"]]$LoadFile(args[2])
-  
-  datlist[["gene"]] <- SlicedData$new(load.data.matrix(args[3])) 
-}else{
-  datlist[["snps"]] <- SlicedData$new(load.data.matrix(args[2]))
-  datlist[["gene"]] <- SlicedData$new(load.data.matrix(args[3]))
-}
-print(ls())
-save(datlist,file=args[6])

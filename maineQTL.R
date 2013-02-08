@@ -18,23 +18,23 @@ exp.filepath <- paste(cancer.type,"expression.txt",sep="_")
 snp.loc.fp <- paste(snp.type,cancer.type,"snp_anno.txt",sep="_")
 exp.loc.fp <- paste(cancer.type,"expression_anno.txt")
 
-datfile <- "static.Rdata"
-
-if(!file.exists(datfile)){
-  shell(paste("/home/nwk2/glm_eqtl/MatrixeQTLGLM/load_static.R","F",snp.filepath,exp.filepath,snp.loc.fp,exp.loc.fp,datfile,sep=" "))
-}else{
+annofile <- "annofile.Rdata"
+snp.expdata <- "snp.exp.Rdata"
+  
+  
+#if(!file.exists(datfile)){
+#  shell(paste("/home/nwk2/glm_eqtl/MatrixeQTLGLM/load_static.R","F",snp.filepath,exp.filepath,snp.loc.fp,exp.loc.fp,datfile,sep=" "))
+#}else{
 ####Load datlist containing SNP,EXP (preloaded into matrixeqtl), and anno data 
-  load(datfile)
-}
+#load(annofile)
+#}
 
-if(!file.exists("static2.Rdata")){
-  snp.exp <- list(snps=datlist$snps,exp=datlist$gene)
-  save(snp.exp,file="static2.Rdata")
-}
+
 ###Function for cross validation
 
-mat.train <- function(i,snp.exploc,train.indices,MEQTL.params){
+mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
   load(snp.exploc)
+  load(anno.loc)
   total.ids <- snp.exp$snps$nCols()
   snp.exp$snps$ColumnSubsample(train.indices)
   snp.exp$exp$ColumnSubsample(train.indices)
@@ -59,7 +59,9 @@ mat.train <- function(i,snp.exploc,train.indices,MEQTL.params){
   
 }
 
-samples <- datlist$ncols
+col.command <- paste0("head -1 ",exp.filepath," | awk '{print NF}'")
+
+samples <- as.integer(system(col.command,intern=T))
 
 
 train.indices <- chunk(rep(1:samples,9),n.chunks=9)
@@ -77,17 +79,21 @@ MEQTL.params <- list(
   verbose=T,
   pvOutputThreshold.tra=1e-8,
   pvOutputThreshold.cis=1e-8,
-  snpspos = datlist[["snp.anno"]],
-  genepos = datlist[["exp.anno"]],
   cisDist=1e6,
   pvalue.hist=F
 )
 
 m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp.type),tmpdir=out.dir)
+registry.name <- paste0("meqtl_reg_",cancer.type)
 
-MEQTL.reg <- makeRegistry(paste0("meqtl_reg_",cancer.type),file.dir=m.dir,packages="MatrixEQTL")
+MEQTL.reg <- makeRegistry(registry.name,file.dir=m.dir,packages="MatrixEQTL")
 
-batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indices),more.args=list(MEQTL.params=MEQTL.params,snp.exploc="/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/static2.Rdata"))
+batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indices),more.args=list(
+  MEQTL.params=MEQTL.params,
+  snp.exploc=snp.expdata,
+  anno.loc=annofile))
+
+
 
 #submitJobs(MEQTL.reg)
 
