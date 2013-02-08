@@ -35,7 +35,7 @@ if(!file.exists("static2.Rdata")){
 
 mat.train <- function(snp.exploc,train.indices,MEQTL.params){
   load(snp.exploc)
-  total.ids <- snp.exp$snps$nCol()
+  total.ids <- snp.exp$snps$nCols()
   kf <- sort(setdiff(train.indices,1:total.ids))
   snp.exp$snps$ColumnSubsample(train.indices)
   snp.exp$exp$ColumnSubsample(train.indices)
