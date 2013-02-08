@@ -37,7 +37,7 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
   load(anno.loc)
   total.ids <- snp.exp$snps$nCols()
   snp.exp$snps$ColumnSubsample(train.indices)
-  snp.exp$exp$ColumnSubsample(train.indices)
+  snp.exp$gene$ColumnSubsample(train.indices)
   with(MEQTL.params,
     Matrix_eQTL_main(
       snps=snp.exp$snps,
