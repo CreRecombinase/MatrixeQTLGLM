@@ -60,7 +60,7 @@ mat.train <- function(snp.exploc,train.indices,MEQTL.params){
   
 }
 
-samples <- datlist[["snps"]]$nCols()
+samples <- datlist$ncols
 
 train.indices <- chunk(rep(1:samples,9),n.chunks=9)
 #57 is a factor of 513, the number of samples
