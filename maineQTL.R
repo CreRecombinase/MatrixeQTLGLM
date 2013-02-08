@@ -61,7 +61,7 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
 
 col.command <- paste0("head -1 ",exp.filepath," | awk '{print NF}'")
 
-samples <- as.integer(system(col.command,intern=T))
+samples <- as.integer(system(col.command,intern=T))-1
 
 
 train.indices <- chunk(rep(1:samples,9),n.chunks=9)
