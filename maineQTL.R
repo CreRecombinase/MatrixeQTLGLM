@@ -33,10 +33,9 @@ if(!file.exists("static2.Rdata")){
 }
 ###Function for cross validation
 
-mat.train <- function(snp.exploc,train.indices,MEQTL.params){
+mat.train <- function(i,snp.exploc,train.indices,MEQTL.params){
   load(snp.exploc)
   total.ids <- snp.exp$snps$nCols()
-  kf <- sort(setdiff(train.indices,1:total.ids))
   snp.exp$snps$ColumnSubsample(train.indices)
   snp.exp$exp$ColumnSubsample(train.indices)
   with(MEQTL.params,
@@ -44,8 +43,8 @@ mat.train <- function(snp.exploc,train.indices,MEQTL.params){
       snps=snp.exp$snps,
       gene=snp.exp$exp,
       cvrt=cvrt,
-      output_file_name=paste0(output.file.name.tra,kf,".txt"),
-      output_file_name.cis=paste0(output.file.name.cis,kf,".txt"),
+      output_file_name=paste0(output.file.name.tra,i,".txt"),
+      output_file_name.cis=paste0(output.file.name.cis,i,".txt"),
       useModel=useModel,
       errorCovariance=errorCovariance,
       verbose=verbose,
@@ -88,7 +87,7 @@ m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp.type),tmpdir=out.dir)
 
 MEQTL.reg <- makeRegistry(paste0("meqtl_reg_",cancer.type),file.dir=m.dir,packages="MatrixEQTL")
 
-batchMap(MEQTL.reg,mat.train,train.indices=train.indices,more.args=list(MEQTL.params=MEQTL.params,snp.exploc="/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/static2.Rdata"))
+batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indices),more.args=list(MEQTL.params=MEQTL.params,snp.exploc="/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/static2.Rdata"))
 
 #submitJobs(MEQTL.reg)
 
