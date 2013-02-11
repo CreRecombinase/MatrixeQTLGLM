@@ -9,7 +9,7 @@ library(MatrixEQTL)
 snp.type <- "unimputed"
 cancer.type <- "brca"
 root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
-out.dir <- paste0(root.dir,"mEQTL_outputs/")
+out.dir <- paste(root.dir,"mEQTL_outputs/",sep="")
 
 setwd(root.dir)
 snp.filepath <- paste(snp.type,cancer.type,"snp.txt",sep="_")
@@ -35,16 +35,16 @@ snp.expdata <- "snp.exp.Rdata"
 mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
   load(snp.exploc)
   load(anno.loc)
-  total.ids <- snp.exp$snps$nCols()
-  snp.exp$snps$ColumnSubsample(train.indices)
-  snp.exp$gene$ColumnSubsample(train.indices)
+  total.ids <- snps.exp$snps$nCols()
+  snps.exp$snps$ColumnSubsample(train.indices)
+  snps.exp$gene$ColumnSubsample(train.indices)
   with(MEQTL.params,
     Matrix_eQTL_main(
-      snps=snp.exp$snps,
-      gene=snp.exp$exp,
+      snps=snps.exp$snps,
+      gene=snps.exp$exp,
       cvrt=cvrt,
-      output_file_name=paste0(output.file.name.tra,i,".txt"),
-      output_file_name.cis=paste0(output.file.name.cis,i,".txt"),
+      output_file_name=paste(output.file.name.tra,i,".txt",sep=""),
+      output_file_name.cis=paste(output.file.name.cis,i,".txt",sep=""),
       useModel=useModel,
       errorCovariance=errorCovariance,
       verbose=verbose,
@@ -59,7 +59,7 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
   
 }
 
-col.command <- paste0("head -1 ",exp.filepath," | awk '{print NF}'")
+col.command <- paste("head -1 ",exp.filepath," | awk '{print NF}'",sep="")
 
 samples <- as.integer(system(col.command,intern=T))-1
 
@@ -72,8 +72,8 @@ test.indices <- chunk(1:samples,chunk.size=57)
 train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLIFY=F)
 
 MEQTL.params <- list(
-  output.file.name.tra=paste0(out.dir,snp.type,"_",cancer.type,"_trans"),
-  output.file.name.cis=paste0(out.dir,snp.type,"_",cancer.type,"_cis"),
+  output.file.name.tra=paste(out.dir,snp.type,"_",cancer.type,"_trans",sep=""),
+  output.file.name.cis=paste(out.dir,snp.type,"_",cancer.type,"_cis",sep=""),
   useModel=modelLINEAR,
   errorCovariance=SlicedData$new(),
   verbose=T,
@@ -83,8 +83,8 @@ MEQTL.params <- list(
   pvalue.hist=F
 )
 
-m.dir <- tempfile(paste0("meqtl.res",cancer.type,"_",snp.type),tmpdir=out.dir)
-registry.name <- paste0("meqtl_reg_",cancer.type)
+m.dir <- tempfile(paste("meqtl.res",cancer.type,"_",snp.type,sep=""),tmpdir=out.dir)
+registry.name <- paste("meqtl_reg_",cancer.type,sep="")
 
 MEQTL.reg <- makeRegistry(registry.name,file.dir=m.dir,packages="MatrixEQTL")
 
@@ -92,8 +92,6 @@ batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indice
   MEQTL.params=MEQTL.params,
   snp.exploc=snp.expdata,
   anno.loc=annofile))
-
-
 
 #submitJobs(MEQTL.reg)
 
