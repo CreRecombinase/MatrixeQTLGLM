@@ -39,7 +39,11 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
   with(MEQTL.params,
     Matrix_eQTL_main(
       snps=snps.exp$snps,
+<<<<<<< HEAD
       gene=snps.exp$gene,
+=======
+      gene=snps.exp$exp,
+>>>>>>> f395ef182f781b712a1a71e4f446ddb24b08d240
       output_file_name=paste(output.file.name.tra,i,".txt",sep=""),
       output_file_name.cis=paste(output.file.name.cis,i,".txt",sep=""),
       useModel=useModel,
