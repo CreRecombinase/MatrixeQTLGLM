@@ -33,7 +33,7 @@ snp.expdata <- "snp.exp.Rdata"
 mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
   load(snp.exploc)
   load(anno.loc)
-  total.ids <- snps.exp$snps$nCols()
+  total.ids <- snp.exp$snps$nCols()
   snp.exp$snps$ColumnSubsample(train.indices)
   snp.exp$gene$ColumnSubsample(train.indices)
   with(MEQTL.params,
