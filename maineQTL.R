@@ -5,7 +5,6 @@ library(sqldf)
 library(plyr)
 library(BatchExperiments)
 library(MatrixEQTL)
-
 snp.type <- "unimputed"
 cancer.type <- "brca"
 root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
@@ -31,7 +30,6 @@ snp.expdata <- "snp.exp.Rdata"
 
 
 ###Function for cross validation
-
 mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
   load(snp.exploc)
   load(anno.loc)
@@ -42,11 +40,9 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
     Matrix_eQTL_main(
       snps=snps.exp$snps,
       gene=snps.exp$exp,
-      cvrt=cvrt,
       output_file_name=paste(output.file.name.tra,i,".txt",sep=""),
       output_file_name.cis=paste(output.file.name.cis,i,".txt",sep=""),
       useModel=useModel,
-      errorCovariance=errorCovariance,
       verbose=verbose,
       pvOutputThreshold=pvOutputThreshold.tra,
       pvOutputThreshold.cis=pvOutputThreshold.cis,
@@ -75,7 +71,6 @@ MEQTL.params <- list(
   output.file.name.tra=paste(out.dir,snp.type,"_",cancer.type,"_trans",sep=""),
   output.file.name.cis=paste(out.dir,snp.type,"_",cancer.type,"_cis",sep=""),
   useModel=modelLINEAR,
-  errorCovariance=SlicedData$new(),
   verbose=T,
   pvOutputThreshold.tra=1e-8,
   pvOutputThreshold.cis=1e-8,
@@ -93,5 +88,5 @@ batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indice
   snp.exploc=snp.expdata,
   anno.loc=annofile))
 
-#submitJobs(MEQTL.reg)
+submitJobs(MEQTL.reg)
 
