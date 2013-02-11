@@ -34,13 +34,12 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
   load(snp.exploc)
   load(anno.loc)
   total.ids <- snps.exp$snps$nCols()
-  snps.exp$snps$ColumnSubsample(train.indices)
-  snps.exp$gene$ColumnSubsample(train.indices)
+  snp.exp$snps$ColumnSubsample(train.indices)
+  snp.exp$gene$ColumnSubsample(train.indices)
   with(MEQTL.params,
     Matrix_eQTL_main(
-      snps=snps.exp$snps,
-      gene=snps.exp$gene,
-      gene=snps.exp$exp,
+      snps=snp.exp$snps,
+      gene=snp.exp$gene,
       output_file_name=paste(output.file.name.tra,i,".txt",sep=""),
       output_file_name.cis=paste(output.file.name.cis,i,".txt",sep=""),
       useModel=useModel,

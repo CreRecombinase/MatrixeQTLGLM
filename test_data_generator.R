@@ -1,5 +1,5 @@
 #script for generating test data for mat.train
-
+library(MatrixEQTL)
 #number of patients
 N=513
 #number of SNPs 
@@ -37,7 +37,7 @@ snp.anno <- snp.anno[order(SNPchrm,SNPpos),]
 
 gene.anno <- gene.anno[order(genechrm,genestart),]
 
-snps.exp <- list(snps=SNPdata,exp=expdata)
+snp.exp <- list(snps=SlicedData$new(SNPdata),gene=SlicedData$new(expdata))
 save(snps.exp,file="test_snps_exp.Rdata")
 
 annolist <- list(snp.anno=snp.anno,exp.anno=gene.anno)

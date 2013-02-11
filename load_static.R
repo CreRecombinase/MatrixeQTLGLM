@@ -5,7 +5,7 @@ library(MatrixEQTL)
 library(sqldf)
 
 annolist <- list()
-snps.exp <- list()
+snp.exp <- list()
 
 
 #Usage <SNPEXP|ANNO>  (If Using arg SNPEXP) <Use_MatrixEQTL_FileReader(T|F)> <SNP_File> <Expression_File> <Output_Rdata_Path>
@@ -50,17 +50,17 @@ save(annolist,file=args$dpath)
 
 }else {
   if(args$MEQTL=="T"){
-    snps.exp[["snps"]] <- SlicedData$new()
-    snps.exp[["snps"]]$fileDelimiter <- "\t"
-    snps.exp[["snps"]]$fileOmitCharacters <- "null"
-    snps.exp[["snps"]]$fileSkipRows <- 1
-    snps.exp[["snps"]]$fileSkipColumns <- 1
-    snps.exp[["snps"]]$LoadFile(args$SNP)
-    snps.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP)) 
+    snp.exp[["snps"]] <- SlicedData$new()
+    snp.exp[["snps"]]$fileDelimiter <- "\t"
+    snp.exp[["snps"]]$fileOmitCharacters <- "null"
+    snp.exp[["snps"]]$fileSkipRows <- 1
+    snp.exp[["snps"]]$fileSkipColumns <- 1
+    snp.exp[["snps"]]$LoadFile(args$SNP)
+    snp.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP)) 
   }else{
-    snps.exp[["snps"]] <- SlicedData$new(load.data.matrix(args$SNP))
-    snps.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP))
+    snp.exp[["snps"]] <- SlicedData$new(load.data.matrix(args$SNP))
+    snp.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP))
   }
-  save(snps.exp,file=args$dpath)
+  save(snp.exp,file=args$dpath)
 }
 
