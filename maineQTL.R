@@ -5,6 +5,7 @@ library(sqldf)
 library(plyr)
 library(BatchExperiments)
 library(MatrixEQTL)
+
 snp.type <- "unimputed"
 cancer.type <- "brca"
 root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
@@ -60,9 +61,9 @@ col.command <- paste("head -1 ",exp.filepath," | awk '{print NF}'",sep="")
 samples <- as.integer(system(col.command,intern=T))-1
 
 
-train.indices <- chunk(rep(1:samples,9),n.chunks=9)
+train.indices <- chunk(rep(1:samples,57),n.chunks=57)
 #57 is a factor of 513, the number of samples
-test.indices <- chunk(1:samples,chunk.size=57)
+test.indices <- chunk(1:samples,chunk.size=9)
 
 
 train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLIFY=F)
@@ -87,6 +88,8 @@ batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indice
   MEQTL.params=MEQTL.params,
   snp.exploc=snp.expdata,
   anno.loc=annofile))
+
+
 
 submitJobs(MEQTL.reg)
 
