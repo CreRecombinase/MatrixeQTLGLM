@@ -47,6 +47,16 @@ tsnp1 <- split(x=all.tra.eqtls[all.tra.eqtls$fn=="1","SNP"],all.tra.eqtls[all.tr
 
 
 make.pred <- function(train.snps,train.gene,test.snps,train.ind,test.ind,snpdat,exp){
+  if(ncol(train.snps)==1){
+    if(sum(sort(table(train.snps[,1]),decreasing=T)[-1])<=2){
+      return(matrix(NA,nrow=nrow(test.snps),ncol=1,dimnames=list(rownames(test.snps),"s0")))
+    }
+  }
+  tables <- apply(train.snps,2,function(x)sort(table(x),decreasing=T))
+  table.sums <- sapply(tables,function(x)sum(x[-1]))
+  if(all(table.sums<=2)){
+    return(matrix(NA,nrow=nrow(test.snps),ncol=1,dimnames=list(rownames(test.snps),"s0")))
+  }
   badcols <- which(is.na(train.gene))
   if(length(badcols)>0){
     train.snps <- train.snps[-badcols,,drop=F]
@@ -54,7 +64,9 @@ make.pred <- function(train.snps,train.gene,test.snps,train.ind,test.ind,snpdat,
   }
   cv1 <- cv.glmnet(x=train.snps,y=train.gene)
   fit1 <- glmnet(train.snps,train.gene,lambda=cv1$lambda.1se,alpha=0.95)
-  return(predict(fit1,newx=test.snps))
+  tpred <- predict(fit1,newx=test.snps)
+  
+  return(tpred)
 }
 
 zero.var <- function(mat){
