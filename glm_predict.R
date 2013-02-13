@@ -7,6 +7,7 @@ library(doParallel)
 
 
 library(MatrixEQTL)
+
 snp.exploc <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/snp.exp.Rdata"
 sample.num <- 513
 kfold <- 57
@@ -39,7 +40,7 @@ glm_predict <- function(snp.exploc,train.index,test.index,eqtl.file){
     exp.train <- snp.exp$gene[gn,train.index]
     badcols <- which(is.na(exp.train))
     if(length(badcols)>0){
-      snp.train <- snp.train[,-badcols,drop=F]
+      snp.train <- snp.train[-badcols,,drop=F]
       exp.train <- exp.train[-badcols]
     }
     snp.test <- t(snp.exp$snps[s.g,test.index,drop=F])
