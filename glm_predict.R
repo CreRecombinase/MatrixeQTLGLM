@@ -54,7 +54,9 @@ glm_predict <- function(snp.exploc,train.index,test.index,eqtl.file){
     fit1 <- glmnet(s.g$snp.train,s.g$exp.train,lambda=cv1$lambda.1se,alpha=0.95);
     tpred <- predict(fit1,newx=s.g$snp.test);
     colnames(tpred)<- s.g$gn;
+    message(paste0(Sys.time(),"\n"))
     tpred
+    
   }
   return(predmat)
 }
