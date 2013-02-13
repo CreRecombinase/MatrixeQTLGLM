@@ -17,7 +17,6 @@ train.indices <- chunk(rep(1:sample.num,kfold),n.chunks=kfold)
 test.indices <- chunk(1:sample.num,chunk.size=sample.num/kfold)
 train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLIFY=F)
 
-snp.exploc <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/test/snp.exp.Rdata"
 eqtl.base <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/57-fold/unimputed_brca_trans"
 eqtl.files <- paste0(eqtl.base,1:57,".txt")
 out.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/57-fold/"
@@ -69,5 +68,5 @@ batchMap(glm.reg,glm_predict,train.index=train.indices,test.index=test.indices,e
 
 
 
-submitJobs(MEQTL.reg)
+submitJobs(glm.reg)
 
