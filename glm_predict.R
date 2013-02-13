@@ -62,7 +62,7 @@ glm_predict <- function(snp.exploc,train.index,test.index,eqtl.file){
 
 
 
-glm.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("doParallel","glmnet"))
+glm.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("doParallel","glmnet","sqldf"))
 
 batchMap(glm.reg,glm_predict,train.index=train.indices,test.index=test.indices,eqtl.file=eqtl.files,more.args=list(snp.exploc=snp.exploc))
 
