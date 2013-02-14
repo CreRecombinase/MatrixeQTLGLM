@@ -27,7 +27,7 @@ registry.name <- paste("glm_reg_")
 
 
 glm_predict <- function(snp.exploc,train.index,test.index,eqtl.file){
-  registerDoParallel(cores=5)
+  registerDoParallel(cores=12)
   load(snp.exploc)
   snp.exp$snps <- as.matrix(snp.exp$snps)
   snp.exp$gene <- as.matrix(snp.exp$gene)
