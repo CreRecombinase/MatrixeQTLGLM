@@ -12,7 +12,7 @@ snp.exploc <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/snp.exp.Rdata"
 sample.num <- 513
 kfold <- 57
 
-513/57
+
 
 train.indices <- chunk(rep(1:sample.num,kfold),n.chunks=kfold)
 test.indices <- chunk(1:sample.num,chunk.size=sample.num/kfold)
@@ -34,35 +34,35 @@ glm_predict <- function(snp.exploc,train.index,test.index,eqtl.file){
   eqtls <- read.csv.sql(eqtl.file,sep="\t",header=T,eol="\n")
   snp.genes <- split(eqtls$SNP,eqtls$gene)
   
-
-  test.train.snp.exp <- foreach(s.g=iter(snp.genes),gn=names(snp.genes),snp.exp$snps,snp.exp$gene,train.index,test.index) %do%{
-    snp.train <- t(snp.exp$snps[s.g,train.index,drop=F])
-    exp.train <- snp.exp$gene[gn,train.index]
+  checkFun <- function(x){
+    return(!all(apply(x,MARGIN=2,function(x)sum(sort(tabulate(x),decreasing=T)[-1]))<=2))
+  }
+  
+  test.train.snp.exp <- lapply(1:length(snp.genes),function(i){
+    snp.train <- t(snp.exp$snps[snp.genes[[i]],train.index,drop=F])
+    exp.train <- snp.exp$gene[names(snp.genes)[i],match(rownames(snp.train),colnames(snp.exp$gene))]
     badcols <- which(is.na(exp.train))
     if(length(badcols)>0){
       snp.train <- snp.train[-badcols,,drop=F]
       exp.train <- exp.train[-badcols]
     }
-    snp.test <- t(snp.exp$snps[s.g,test.index,drop=F])
-    list(snp.train=snp.train,exp.train=exp.train,snp.test=snp.test,gn=gn)
+    snp.test <- t(snp.exp$snps[snp.genes[[i]],test.index,drop=F])
+    if(checkFun(snp.train+1)){
+      return(list(snp.train=snp.train,exp.train=exp.train,snp.test=snp.test,gn=gn))
+    }
+  })
+
+ 
+  genpred <- function(s.g){
+    cv1 <- cv.glmnet(x=s.g$snp.train,s.g$exp.train,alpha=0.95)
+    tpred <- predict(cv1,newx=s.g$snp.test,s=cv1$lambda.1se)
+    colnames(tpred)<-s.g$gn
+    return(data.frame(t(tpred)))
   }
-  checkFun <- function(x){
-    return(!all(apply(x$snp.train+1,MARGIN=2,function(x)sum(sort(tabulate(x),decreasing=T)[-1]))<=2))
-  }
-  predmat <- foreach(s.g=iter(test.train.snp.exp,checkFunc=checkFun),.combine=cbind,.multicombine=T,.inorder=F,.packages="glmnet",.verbose=T,.noexport=c("cv1","fit1")) %dopar% {
-    
-    cv1 <- cv.glmnet(x=s.g$snp.train,s.g$exp.train);
-    fit1 <- glmnet(s.g$snp.train,s.g$exp.train,lambda=cv1$lambda.1se,alpha=0.95);
-    tpred <- predict(fit1,newx=s.g$snp.test);
-    colnames(tpred)<- s.g$gn;
-    message(paste0(Sys.time(),"\n"))
-    tpred
-    
-  }
+  
+  predmat <- ldply(test.train.snp.exp,.fun=genpred,.parallel=T,.paropts=list(.packages="glmnet"))
   return(predmat)
 }
-
-
 
 
 glm.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("doParallel","glmnet","sqldf"))
