@@ -51,6 +51,7 @@ glm_predict <- function(snp.exploc,train.index,test.index,eqtl.file){
       return(list(snp.train=snp.train,exp.train=exp.train,snp.test=snp.test,gn=names(snp.genes)[i]))
     }
   })
+  test.train.snp.exp <- test.train.snp.exp[!sapply(test.train.snp.exp,is.null)]
 
  
   genpred <- function(s.g){
