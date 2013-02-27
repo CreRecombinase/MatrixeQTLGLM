@@ -7,8 +7,17 @@ library(doParallel)
 
 
 library(MatrixEQTL)
-
-snp.exploc <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/snp.exp.Rdata"
+if(Sys.info()['sysname']=="Windows"){
+  snp.exploc <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/test/snp.exp.Rdata"
+  registerDoParallel(5)
+  eqtl.base <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/test2/unimputed_brca_trans"
+}else{
+  snp.exploc <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/snp.exp.Rdata"
+  registerDoParallel(12)
+  eqtl.base <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/57-fold/unimputed_brca_trans"
+  
+}
+eqtl.files <- paste0(eqtl.base,1:57,".txt")
 sample.num <- 513
 kfold <- 57
 
@@ -18,55 +27,85 @@ train.indices <- chunk(rep(1:sample.num,kfold),n.chunks=kfold)
 test.indices <- chunk(1:sample.num,chunk.size=sample.num/kfold)
 train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLIFY=F)
 
-eqtl.base <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/57-fold/unimputed_brca_trans"
-eqtl.files <- paste0(eqtl.base,1:57,".txt")
+
 out.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/57-fold/"
 
 m.dir <- tempfile("glm_res",tmpdir=out.dir)
 registry.name <- paste("glm_reg_")
 
 
-glm_predict <- function(snp.exploc,train.index,test.index,eqtl.file){
-  registerDoParallel(cores=12)
-  load(snp.exploc)
-  snp.exp$snps <- as.matrix(snp.exp$snps)
-  snp.exp$gene <- as.matrix(snp.exp$gene)
-  eqtls <- read.csv.sql(eqtl.file,sep="\t",header=T,eol="\n")
-  snp.genes <- split(eqtls$SNP,eqtls$gene)
-  
-  checkFun <- function(x){
-    return(!all(apply(x,MARGIN=2,function(x)sum(sort(tabulate(x),decreasing=T)[-1]))<=2))
-  }
-  
-  test.train.snp.exp <- lapply(1:length(snp.genes),function(i){
-    snp.train <- t(snp.exp$snps[snp.genes[[i]],train.index,drop=F])
-    exp.train <- snp.exp$gene[names(snp.genes)[i],match(rownames(snp.train),colnames(snp.exp$gene))]
-    badcols <- which(is.na(exp.train))
-    if(length(badcols)>0){
-      snp.train <- snp.train[-badcols,,drop=F]
-      exp.train <- exp.train[-badcols]
-    }
-    snp.test <- t(snp.exp$snps[snp.genes[[i]],test.index,drop=F])
-    if(checkFun(snp.train+1)){
-      return(list(snp.train=snp.train,exp.train=exp.train,snp.test=snp.test,gn=names(snp.genes)[i]))
-    }
-  })
-  test.train.snp.exp <- test.train.snp.exp[!sapply(test.train.snp.exp,is.null)]
 
- 
+aeqtls <- ldply(eqtl.files,function(x){
+  tqtl <- read.csv.sql(x,header=T,eol="\n",sep="\t")
+  knum <- gsub(".+trans([0-9]+).txt","\\1",x)
+  tqtl$knum <- knum
+  return(tqtl)
+}
+)
+
+fsnp.genes <- split(aeqtls,aeqtls$knum)
+snp.genes <- unlist(lapply(fsnp.genes,function(x)split(x$SNP,x$gene)),recursive=F)
+rm(aeqtls,fsnp.genes)
+
+load(snp.exploc)
+snp.exp$snps <- t(as.matrix(snp.exp$snps))
+snp.exp$gene <- t(as.matrix(snp.exp$gene))
+snp.exp$gene <- snp.exp$gene[rownames(snp.exp$snps),]
+
+
+knum <- as.integer(gsub("([0-9]+)\\..+","\\1",names(snp.genes)))
+
+
+
+
+checkFun <- function(x){
+  return(!all(apply(x,MARGIN=2,function(x)sum(sort(tabulate(x),decreasing=T)[-1]))<=2))
+}
+
+
+test.train.snp.gene <- llply(.data=1:length(snp.genes),function(i,snp.exp,snp.genes,train.indices,test.indices){
+  gname <- gsub("[0-9]+.(.+)","\\1",names(snp.genes)[i])
+  kn <- knum[i]
+  train.snp <- snp.exp$snps[train.indices[[kn]],snp.genes[[i]],drop=F]
+  train.exp <- snp.exp$gene[train.indices[[kn]],gname]
+  badcols <- which(is.na(train.exp))
+  if(length(badcols)>0){
+    train.snp <- train.snp[-badcols,,drop=F]
+    train.exp <- train.exp[-badcols]
+  }
+  test.snp <- snp.exp$snps[test.indices[[kn]],snp.genes[[i]],drop=F]
+  if(checkFun(train.snp+1)){
+    return(list(snp.train=train.snp,exp.train=train.exp,snp.test=test.snp,gn=gname))
+  }
+  },snp.exp=snp.exp,snp.genes=snp.genes,train.indices=train.indices,test.indices=test.indices,.parallel=F,.paropts=list(multicombine=T,inorder=F),.progress="tk")
+  
+  
+
+glm_predict <- function(snp.exploc,train.index,test.index){
+  registerDoParallel(cores=12)
+
+
   genpred <- function(s.g){
     cv1 <- cv.glmnet(x=s.g$snp.train,s.g$exp.train,alpha=0.95)
     tpred <- predict(cv1,newx=s.g$snp.test,s=cv1$lambda.1se)
-    colnames(tpred)<-s.g$gn
-    return(data.frame(t(tpred)))
+    tpred <- data.frame(t(tpred))
+    tpred$gn <- s.g$gn
+    return(tpred)
   }
   
-  predmat <- ldply(test.train.snp.exp,.fun=genpred,.parallel=T,.paropts=list(.packages="glmnet"))
+
+
+  predmat <- ldply(test.train.snp.exp,.fun=genpred,.parallel=T,.paropts=list(.packages="glmnet",.multicombine=T,.inorder=F))
+  
+  system.time(tpredmat <- ldply(test.train.snp.exp[1:300],.fun=genpred,.parallel=T,.paropts=list(.packages="glmnet",.multicombine=T,.inorder=F)))
+  Rprof(NULL)
+  summaryRprof("glmprof.out")
+  tpredmat
   return(predmat)
 }
 
 
-glm.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("doParallel","glmnet","sqldf","plyr"))
+glm.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("doParallel","glmnet","sqldf","plyr","MatrixEQTL"))
 
 batchMap(glm.reg,glm_predict,train.index=train.indices,test.index=test.indices,eqtl.file=eqtl.files,more.args=list(snp.exploc=snp.exploc))
 
