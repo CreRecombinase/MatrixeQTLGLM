@@ -4,18 +4,21 @@ library(MatrixEQTL)
 library(plyr)
 library(doParallel)
 library(sqldf)
+library(RSQLite)
+library(RSQLite.extfuns)
+library(BatchExperiments)
+library(reshape2)
 if(Sys.info()['sysname']=="Windows"){
   snp.exploc <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/test/snp.exp.Rdata"
   registerDoParallel(5)
   eqtl.base <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/test2/unimputed_brca_trans"
+  snp.melt.file <- "D:/snp_melt.txt"
   
   
   
 }else{
   snp.exploc <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/snp.exp.Rdata"
-  registerDoParallel(12)
-  eqtl.base <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/57-fold/unimputed_brca_trans"
-  save.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/test.train.snp.gene.Rdata"
+  snp.melt.file <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/snp_melt.txt"
   
 }
 eqtl.files <- paste0(eqtl.base,1:57,".txt")
@@ -27,6 +30,7 @@ kfold <- 57
 train.indices <- chunk(rep(1:sample.num,kfold),n.chunks=kfold)
 test.indices <- chunk(1:sample.num,chunk.size=sample.num/kfold)
 train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLIFY=F)
+
 
 
 
@@ -46,30 +50,47 @@ load(snp.exploc)
 snp.exp$snps <- t(as.matrix(snp.exp$snps))
 snp.exp$gene <- t(as.matrix(snp.exp$gene))
 snp.exp$gene <- snp.exp$gene[rownames(snp.exp$snps),]
+gc()
+
+db <- dbConnect(dbDriver("SQLite"),dbname="D:/gene_snp.db",loadable.extensions=T)
 
 
-knum <- as.integer(gsub("([0-9]+)\\..+","\\1",names(snp.genes)))
+test.df <- do.call("rbind",lapply(1:length(test.indices),function(x){
+  data.frame(Sample=rownames(snp.exp$gene)[test.indices[[x]]],Kfold=x,Index=test.indices[[x]])
+}))
+
+train.df <-test.df <- do.call("rbind",lapply(1:length(train.indices),function(x){
+  data.frame(Sample=rownames(snp.exp$gene)[train.indices[[x]]],Kfold=x,Index=train.indices[[x]])
+}))
+
+dbWriteTable(db,name="testSamples",test.df,row.names=F,overwrite=T,append=F)
+dbWriteTable(db,name="trainSamples",train.df,row.names=F,overwrite=T,append=F)
 
 
+gene.melt <- melt(snp.exp$gene,id.vars=rownames(snp.exp$gene),variable.name="gene")
+colnames(gene.melt) <- c("Sample","Gene","Value")
+dbWriteTable(db,"gene",gene.melt,row.names=F,overwrite=T,append=F)
+rm(gene.melt)
 
-checkFun <- function(x){
-  return(!all(apply(x,MARGIN=2,function(x)sum(sort(tabulate(x),decreasing=T)[-1]))<=2))
+snpcols <- length(colnames(snp.exp$snps))
+snpcol.chunks <- chunk(seq(snpcols),chunk.size=20000)
+
+
+for(i in 1:length(snpcol.chunks)){
+  tsnp <- melt(snp.exp$snps[,snpcol.chunks[[i]]])
+  colnames(tsnp)<- c("Sample","Snps","Value")
+  write.table(tsnp,file=snp.melt.file,append=T,quote=F,sep="\t",row.names=F,col.names=ifelse(i==1,T,F))
+  #dbWriteTable(db,name="Snps",tsnp,row.names=F,append=T,overwrite=F)
 }
 
 
-test.train.snp.gene <- llply(.data=1:length(snp.genes),function(i,snp.exp,snp.genes,train.indices,test.indices){
-  gname <- gsub("[0-9]+.(.+)","\\1",names(snp.genes)[i])
-  kn <- knum[i]
-  train.snp <- snp.exp$snps[train.indices[[kn]],snp.genes[[i]],drop=F]
-  train.exp <- snp.exp$gene[train.indices[[kn]],gname]
-  badcols <- which(is.na(train.exp))
-  if(length(badcols)>0){
-    train.snp <- train.snp[-badcols,,drop=F]
-    train.exp <- train.exp[-badcols]
-  }
-  test.snp <- snp.exp$snps[test.indices[[kn]],snp.genes[[i]],drop=F]
-  if(checkFun(train.snp+1)){
-    return(list(snp.train=train.snp,exp.train=train.exp,snp.test=test.snp,gn=gname))
-  }
-},snp.exp=snp.exp,snp.genes=snp.genes,train.indices=train.indices,test.indices=test.indices,.parallel=F,.paropts=list(multicombine=T,inorder=F),.progress="text")
+dbSendQuery(conn=db,statement="CREATE INDEX gs ON gene(Gene,Sample)")
+dbSendQuery(conn=db,statement="CREATE INDEX ss ON Snps(Snps,Sample)")
+
+
+
+system.time(tg <- dbGetQuery(db,statement="select * from gene where Sample in (select Sample from testSamples where Kfold=1) and Gene='MTL5'"))
+ts <- dbGetQuery(db,statement="select * from Snps where Sample in (select Sample from testSamples where Kfold=1) and Snps='rs7129419'")
+
+tg
 
