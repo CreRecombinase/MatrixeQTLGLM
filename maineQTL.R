@@ -7,9 +7,9 @@ library(BatchExperiments)
 library(MatrixEQTL)
 
 snp.type <- "unimputed"
-cancer.type <- "brca"
-root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
-out.dir <- paste(root.dir,"57-fold/",sep="")
+cancer.type <- "brca_RNAseq"
+root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/"
+out.dir <- paste(root.dir,"82-fold/",sep="")
 
 setwd(root.dir)
 snp.filepath <- paste(snp.type,cancer.type,"snp.txt",sep="_")
@@ -61,9 +61,9 @@ col.command <- paste("head -1 ",exp.filepath," | awk '{print NF}'",sep="")
 samples <- as.integer(system(col.command,intern=T))-1
 
 
-train.indices <- chunk(rep(1:samples,57),n.chunks=57)
+train.indices <- chunk(rep(1:samples,82),n.chunks=82)
 #57 is a factor of 513, the number of samples
-test.indices <- chunk(1:samples,chunk.size=9)
+test.indices <- chunk(1:samples,chunk.size=10)
 
 
 train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLIFY=F)

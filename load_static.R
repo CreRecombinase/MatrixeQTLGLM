@@ -11,6 +11,7 @@ snp.exp <- list()
 #Usage <SNPEXP|ANNO>  (If Using arg SNPEXP) <Use_MatrixEQTL_FileReader(T|F)> <SNP_File> <Expression_File> <Output_Rdata_Path>
 #Returns a list in that order
 oargs <- commandArgs(trailingOnly=TRUE)
+print(oargs)
 args <- list()
 args$EXPANNO <- oargs[1]
 if(args$EXPANNO=="ANNO"){
