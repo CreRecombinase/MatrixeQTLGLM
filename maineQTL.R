@@ -18,8 +18,8 @@ exp.filepath <- paste(cancer.type,"expression.txt",sep="_")
 snp.loc.fp <- paste(snp.type,cancer.type,"snp_anno.txt",sep="_")
 exp.loc.fp <- paste(cancer.type,"expression_anno.txt")
 
-annofile <- "annofile.Rdata"
-snp.expdata <- "snp.exp.Rdata"
+annofile <- "rnaseq_brca_anno.Rdata"
+snp.expdata <- "rnaseq_snp_exp.Rdata"
   
   
 #if(!file.exists(datfile)){
