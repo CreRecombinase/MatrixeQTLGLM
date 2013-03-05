@@ -31,7 +31,7 @@ if(args$SNPSGENE=="GENE"){
   write.table(gene_melt,file=args$MELTFILE,sep="\t",col.names=T,row.names=F,quote=F)
   
 }else{
-  snp.chunks <- chunk(1:nrow(snp.exp$snps),n.chunks=args$SNPCHUNKS)
+  snp.chunks <- chunk(1:nrow(snp.exp$snps),n.chunks=as.integer(args$SNPCHUNKS))
   for(i in 1:length(snp.chunks)){
     tsnp <- melt(as.matrix(snp.exp$snps)[snp.chunks[[i]],])
     colnames(tsnp)<- c("Snp","Sample","Value")
