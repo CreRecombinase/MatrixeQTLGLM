@@ -58,7 +58,7 @@ glm_predict <- function(t.iters,dbout,dbfile){
     }
     dbDisconnect(db)
     
-  },dbfile,dbo,.parallel=F,.paropts=list(.packages=c("RSQLite","glmnet","reshape2"),.inorder=F),.inform=F))
+  },dbfile,dbo,.parallel=F,.paropts=list(.packages=c("RSQLite","glmnet","reshape2"),.inorder=F),.inform=F)
  
     
 }
