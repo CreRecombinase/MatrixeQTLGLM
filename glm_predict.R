@@ -68,7 +68,7 @@ glm_predict <- function(t.iters,dbout,dbfile){
 }
 
 
-m.dir <- tempfile(glm.res,tmpdir=out.dir)
+m.dir <- tempfile("glm.res",tmpdir=out.dir)
 
 
 
