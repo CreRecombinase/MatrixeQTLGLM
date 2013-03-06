@@ -67,7 +67,10 @@ glm_predict <- function(t.iters,dbout,dbfile){
     
 }
 
+
 m.dir <- tempfile(glm.res,tmpdir=out.dir)
+
+
 
 glm.reg <- makeRegistry("glm.reg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
 
