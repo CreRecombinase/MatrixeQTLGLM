@@ -44,8 +44,8 @@ glm_predict <- function(t.iters,dbo,dbfile){
     snp.test <- acast(data=snp.test,formula=Sample~Snps,value.var="Value")
     exp.query <- paste0("select Value from gene where Sample in (select Sample from trainSamples where Kfold=",Kfold,") and Gene='",Gene,"' order by Sample")
     exp.train <- unlist(dbGetQuery(db,exp.query))
+    dbDisconnect(db)
     cv1 <- tryCatch(cv.glmnet(x=snp.train,exp.train,alpha=0.95),error=function(e)e)
-    
     if(inherits(cv1,"error")){
       if(sum(sort(tabulate(snp.train),decreasing=T)[-1])>=2){
         t <- 0
@@ -58,35 +58,21 @@ glm_predict <- function(t.iters,dbo,dbfile){
         }
         tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
         npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=Gene)
-        odb <- dbConnect(drv=dbDriver("SQLite"),dbname=dbo)
-        db.success <- tryCatch(dbWriteTable(odb,name="predict",npred,row.names=F,append=T),error=function(e)e)
-        dbDisconnect(odb)
-        while(inherits(db.success,"error")){
-          odb <- dbConnect(drv=dbDriver("SQLite"),dbname=dbo)
-          db.success <- tryCatch(dbWriteTable(odb,name="predict",npred,row.names=F,append=T),error=function(e)e)
-          dbDisconnect(odb)
-        }
-      }
+        return(npred)
+      }     
     }else{
       tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
       npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=Gene)
-      odb <- dbConnect(drv=dbDriver("SQLite"),dbname=dbo)
-      db.success <- tryCatch(dbWriteTable(odb,name="predict",npred,row.names=F,append=T),error=function(e)e)
-      dbDisconnect(odb)
-      while(inherits(db.success,"error")){
-        odb <- dbConnect(drv=dbDriver("SQLite"),dbname=dbo)
-        db.success <- tryCatch(dbWriteTable(odb,name="predict",npred,row.names=F,append=T),error=function(e)e)
-        dbDisconnect(odb)
-      }
+      return(npred)
+     
     }
-    dbDisconnect(db)
-    return(db.success)
     
   }
   
-  foreach(Kfold=iter(t.iters$Kfold),Gene=iter(t.iters$Gene),.inorder=F,.multicombine=T,.verbose=T,.packages=c("glmnet","RSQLite","reshape2"),.errorhandling="pass") %do%
-    glm.engine(Kfold,Gene)
- 
+  
+  tt.res <- mdply(.data=t.iters,.fun=glm.engine)
+  tt.res <- tt.res[,c("Sample","Value","Gene")]
+  return(tt.res)
     
 }
 
@@ -96,7 +82,7 @@ glm_predict <- function(t.iters,dbo,dbfile){
 
 m.dir <- tempfile("glm.res",tmpdir=out.dir)
 
-glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite","foreach","iterators"))
+glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
 
 batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbo=dbo,dbfile=dbfile))
 
