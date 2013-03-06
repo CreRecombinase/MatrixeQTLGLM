@@ -96,7 +96,7 @@ glm_predict <- function(t.iters,dbo,dbfile){
 
 m.dir <- tempfile("glm.res",tmpdir=out.dir)
 
-glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite","foreach"))
+glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite","foreach","iterators"))
 
 batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbo=dbo,dbfile=dbfile))
 
