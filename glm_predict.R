@@ -14,7 +14,7 @@ db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
 all.iters <- dbGetQuery(db,"select distinct Gene,Kfold from eqtls")
 
 all.iters <- lapply(chunk(1:nrow(all.iters),n.chunks=200),function(x)all.iters[x,])
-glm_predict <- function(t.iters,dbout,dbfile){
+glm_predict <- function(t.iters,dbo,dbfile){
   m_ply(.data=t.iters,.fun=function(Kfold,Gene,dbfile,dbo){
     db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
     querytrain <- paste0("select * from Snps where Sample in (select Sample from trainSamples where Kfold = ",Kfold,") and Snps in (select SNP from eqtls where Gene='",Gene,"' and Kfold=",Kfold,")order by Sample")
@@ -74,7 +74,7 @@ m.dir <- tempfile("glm.res",tmpdir=out.dir)
 
 glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
 
-batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbout=dbo,dbfile=dbfile))
+batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbo=dbo,dbfile=dbfile))
 
 
 
