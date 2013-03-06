@@ -72,7 +72,7 @@ m.dir <- tempfile("glm.res",tmpdir=out.dir)
 
 
 
-glm.reg <- makeRegistry("glm.reg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
+glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
 
 batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbout=dbo,dbfile=dbfile))
 
