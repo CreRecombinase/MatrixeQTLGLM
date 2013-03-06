@@ -6,16 +6,35 @@ library(reshape2)
 library(RSQLite)
 
 
-root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
-out.dir <- paste0(root.dir,"57-fold")
-dbfile <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/gene_snp.db"
-dbo <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/predict.db"
+if(Sys.info()['sysname']=="Windows"){
+  root.dir <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/"
+  out.dir <- root.dir
+  dbfile <- "D:/gene_snp.db"
+  dbo <- "D:/predict_gene.db"
+  chunks <- 10
+}else{
+  root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
+  out.dir <- paste0(root.dir,"57-fold")
+  dbfile <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/gene_snp.db"
+  dbo <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/predict.db"
+  chunks=200
+}
+
+
+
 db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
 all.iters <- dbGetQuery(db,"select distinct Gene,Kfold from eqtls")
 
-all.iters <- lapply(chunk(1:nrow(all.iters),n.chunks=200),function(x)all.iters[x,])
+if(Sys.info()['sysname']=="Windows"){
+  all.iters <- all.iters[1:100,]
+}
+  
+all.iters <- lapply(chunk(1:nrow(all.iters),n.chunks=chunks),function(x)all.iters[x,])
+
+
 glm_predict <- function(t.iters,dbo,dbfile){
-  m_ply(.data=t.iters,.fun=function(Kfold,Gene,dbfile,dbo){
+  
+  glm.engine <- function(Kfold,Gene){
     db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
     querytrain <- paste0("select * from Snps where Sample in (select Sample from trainSamples where Kfold = ",Kfold,") and Snps in (select SNP from eqtls where Gene='",Gene,"' and Kfold=",Kfold,")order by Sample")
     snp.train <- dbGetQuery(db,querytrain)
@@ -38,19 +57,19 @@ glm_predict <- function(t.iters,dbo,dbfile){
           return(NULL)
         }
         tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
-        npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1])
+        npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=Gene)
         odb <- dbConnect(drv=dbDriver("SQLite"),dbname=dbo)
-        db.success <- tryCatch(dbWriteTable(odb,name="predict",npred,row.names=F),error=function(e)e)
+        db.success <- tryCatch(dbWriteTable(odb,name="predict",npred,row.names=F,append=T),error=function(e)e)
         dbDisconnect(odb)
         while(inherits(db.success,"error")){
           odb <- dbConnect(drv=dbDriver("SQLite"),dbname=dbo)
-          db.success <- tryCatch(dbWriteTable(odb,name="predict",npred,row.names=F),error=function(e)e)
+          db.success <- tryCatch(dbWriteTable(odb,name="predict",npred,row.names=F,append=T),error=function(e)e)
           dbDisconnect(odb)
         }
       }
     }else{
       tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
-      npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1])
+      npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=Gene)
       odb <- dbConnect(drv=dbDriver("SQLite"),dbname=dbo)
       db.success <- tryCatch(dbWriteTable(odb,name="predict",npred,row.names=F,append=T),error=function(e)e)
       dbDisconnect(odb)
@@ -61,21 +80,25 @@ glm_predict <- function(t.iters,dbo,dbfile){
       }
     }
     dbDisconnect(db)
+    return(db.success)
     
-  },dbfile,dbo,.parallel=F,.paropts=list(.packages=c("RSQLite","glmnet","reshape2"),.inorder=F),.inform=F)
+  }
+  
+  foreach(Kfold=iter(t.iters$Kfold),Gene=iter(t.iters$Gene),.inorder=F,.multicombine=T,.verbose=T,.packages=c("glmnet","RSQLite","reshape2"),.errorhandling="pass") %do%
+    glm.engine(Kfold,Gene)
  
     
 }
 
 
+
+
+
 m.dir <- tempfile("glm.res",tmpdir=out.dir)
 
-
-
-glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
+glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite","foreach"))
 
 batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbo=dbo,dbfile=dbfile))
-
 
 
 submitJobs(glm.reg)
