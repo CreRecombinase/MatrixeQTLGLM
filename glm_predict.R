@@ -5,6 +5,9 @@ library(BatchExperiments)
 library(reshape2)
 library(RSQLite)
 
+
+root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
+out.dir <- paste0(root.dir,"57-fold")
 dbfile <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/gene_snp.db"
 dbo <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/predict.db"
 db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
@@ -64,8 +67,9 @@ glm_predict <- function(t.iters,dbout,dbfile){
     
 }
 
+registry.name <- tempfile(glm.res,tmpdir=out.dir)
 
-glm.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
+glm.reg <- makeRegistry("glm.reg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
 
 batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbout=dbo,dbfile=dbfile))
 
