@@ -24,6 +24,7 @@ if(Sys.info()['sysname']=="Windows"){
 
 db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
 all.iters <- dbGetQuery(db,"select distinct Gene,Kfold from eqtls")
+dbDisconnect(db)
 
 if(Sys.info()['sysname']=="Windows"){
   all.iters <- all.iters[1:100,]
@@ -32,7 +33,7 @@ if(Sys.info()['sysname']=="Windows"){
 all.iters <- lapply(chunk(1:nrow(all.iters),n.chunks=chunks),function(x)all.iters[x,])
 
 
-glm_predict <- function(t.iters,dbo,dbfile){
+glm_predict <- function(t.iters,dbfile){
   
   glm.engine <- function(Kfold,Gene){
     db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
@@ -84,7 +85,7 @@ m.dir <- tempfile("glm.res",tmpdir=out.dir)
 
 glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
 
-batchMap(glm.reg,fun=glm_predict,t.iters=all.iters[1:10],more.args=list(dbo=dbo,dbfile=dbfile))
+batchMap(glm.reg,fun=glm_predict,t.iters=all.iters[1:10],more.args=list(dbfile=dbfile))
 
 
 submitJobs(glm.reg)
