@@ -84,7 +84,7 @@ m.dir <- tempfile("glm.res",tmpdir=out.dir)
 
 glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
 
-batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbo=dbo,dbfile=dbfile))
+batchMap(glm.reg,fun=glm_predict,t.iters=all.iters[1:10],more.args=list(dbo=dbo,dbfile=dbfile))
 
 
 submitJobs(glm.reg)
