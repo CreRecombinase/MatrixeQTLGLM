@@ -57,10 +57,27 @@ save(annolist,file=args$dpath)
     snp.exp[["snps"]]$fileSkipRows <- 1
     snp.exp[["snps"]]$fileSkipColumns <- 1
     snp.exp[["snps"]]$LoadFile(args$SNP)
+    snp.cols <- scan()
     snp.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP)) 
+    sargs <- scan(args$SNP,what="character",nlines=1,sep="\n")
+    sargs <- strsplit(sargs,split="\t")[[1]]
+    sargs <- sargs[-1]
+    expargs <- scan(args$EXP,what="character",nlines=1,sep="\n")
+    expargs <- strsplit(expargs,split="\t")[[1]]
+    expargs <- expargs[-1]
+    snp.exp[["snps"]]$ColumnSubsample(match(expargs,sargs))
+    
+    
   }else{
     snp.exp[["snps"]] <- SlicedData$new(load.data.matrix(args$SNP))
     snp.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP))
+    sargs <- scan(args$SNP,what="character",nlines=1,sep="\n")
+    sargs <- strsplit(sargs,split="\t")[[1]]
+    sargs <- sargs[-1]
+    expargs <- scan(args$EXP,what="character",nlines=1,sep="\n")
+    expargs <- strsplit(expargs,split="\t")[[1]]
+    expargs <- expargs[-1]
+    snp.exp[["snps"]]$ColumnSubsample(match(expargs,sargs))
   }
   save(snp.exp,file=args$dpath)
 }
