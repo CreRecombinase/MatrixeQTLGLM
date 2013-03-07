@@ -10,33 +10,34 @@ if(Sys.info()['sysname']=="Windows"){
   root.dir <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/"
   out.dir <- root.dir
   dbfile <- "D:/gene_snp.db"
-  dbo <- "D:/predict_gene.db"
   chunks <- 10
 }else{
   root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
   out.dir <- paste0(root.dir,"57-fold")
   dbfile <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/gene_snp.db"
-  dbo <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/predict.db"
   chunks=200
 }
 
 
 
 db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
+
 all.iters <- dbGetQuery(db,"select distinct Gene,Kfold from eqtls")
 dbDisconnect(db)
 
-if(Sys.info()['sysname']=="Windows"){
-  all.iters <- all.iters[1:100,]
-}
+
   
 all.iters <- lapply(chunk(1:nrow(all.iters),n.chunks=chunks),function(x)all.iters[x,])
 
 
 glm_predict <- function(t.iters,dbfile){
+
+  registerDoParallel(cores=5)
   
   glm.engine <- function(Kfold,Gene){
-    db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
+    
+    db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
+    dbGetQuery(db,"pragma journal_mode=TRUNCATE")
     querytrain <- paste0("select * from Snps where Sample in (select Sample from trainSamples where Kfold = ",Kfold,") and Snps in (select SNP from eqtls where Gene='",Gene,"' and Kfold=",Kfold,")order by Sample")
     snp.train <- dbGetQuery(db,querytrain)
     snp.train <- acast(data=snp.train,formula=Sample~Snps,value.var="Value")
@@ -71,7 +72,7 @@ glm_predict <- function(t.iters,dbfile){
   }
   
   
-  tt.res <- mdply(.data=t.iters,.fun=glm.engine)
+  system.time(tt.res <- mdply(.data=t.iters,.fun=glm.engine,.parallel=T,.paropts=list(.multicombine=T,.inorder=F,.verbose=F,.export=c("glm.engine","dbfile"),.packages=c("glmnet","RSQLite","reshape2"))))
   tt.res <- tt.res[,c("Sample","Value","Gene")]
   return(tt.res)
     
@@ -83,10 +84,11 @@ glm_predict <- function(t.iters,dbfile){
 
 m.dir <- tempfile("glm.res",tmpdir=out.dir)
 
-glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite"))
+glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite","doParallel"))
 
 batchMap(glm.reg,fun=glm_predict,t.iters=all.iters[1:10],more.args=list(dbfile=dbfile))
 
 
 submitJobs(glm.reg)
+
 
