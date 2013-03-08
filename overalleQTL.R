@@ -11,8 +11,8 @@ out.dir <- paste(root.dir,"output")
 setwd(root.dir)
 
 
-annofile <- "rnaseq_brca_anno.Rdata"
-snp.expdata <- "rnaseq_snp_exp.Rdata"
+annofile <- "imputed_anno.Rdata"
+snp.expdata <- "imputedSNP.genes.Rdata"
   
 MEQTL.params <- list(
   output.file.name.tra=paste(out.dir,snp.type,"_",cancer.type,"_trans",sep=""),
