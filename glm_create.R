@@ -16,7 +16,7 @@ base.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/"
 dbfile <- paste0(base.dir,"rnaseq_snp_genes.db")
 
 eqtl.files <- paste0(base.dir,"82-fold/unimputed_brca_RNAseq_trans")
-eqtl.files <- paste0(eqtl.base,1:82,".txt")
+eqtl.files <- paste0(eqtl.files,1:82,".txt")
 
 exp.file <- paste0(base.dir,"brca_RNAseq_expression.txt")
 snp.file <- paste0(base.dir,"unimputed_brca_RNAseq_snp.txt")
