@@ -8,22 +8,20 @@ library(RSQLite)
 library(RSQLite.extfuns)
 library(BatchExperiments)
 library(reshape2)
-if(Sys.info()['sysname']=="Windows"){
-  snp.exploc <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/test/snp.exp.Rdata"
-  registerDoParallel(5)
-  eqtl.base <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/test2/unimputed_brca_trans"
-  snp.melt.file <- "D:/snp_melt.txt"
-  
-  
-  
-}else{
-  snp.exploc <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/snp.exp.Rdata"
-  snp.melt.file <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/snp_melt.txt"
-  
-}
-eqtl.files <- paste0(eqtl.base,1:57,".txt")
-sample.num <- 513
-kfold <- 57
+
+
+
+base.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/"
+
+dbfile <- paste0(base.dir,"rnaseq_snp_genes.db")
+
+eqtl.files <- paste0(base.dir,"82-fold/unimputed_brca_RNAseq_trans")
+eqtl.files <- paste0(eqtl.base,1:82,".txt")
+
+exp.file <- paste0(base.dir,"brca_RNAseq_expression.txt")
+snp.file <- paste0(base.dir,"unimputed_brca_RNAseq_snp.txt")
+sample.num <- 819
+kfold <- 82
 
 
 
@@ -42,55 +40,44 @@ aeqtls <- ldply(eqtl.files,function(x){
 }
 )
 
+db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
+colnames(aeqtls) <- c("SNP","Gene","tStat","pValue","FDR","Kfold")
+dbWriteTable(db,"eqtls",aeqtls,row.names=F)
+dbSendQuery(db,"Create index sgk on eqtls(SNP,Gene,Kfold)")
+dbSendQuery(db,"Create index gk on eqtls(Gene,Kfold)")
+
+
+
 fsnp.genes <- split(aeqtls,aeqtls$knum)
 snp.genes <- unlist(lapply(fsnp.genes,function(x)split(x$SNP,x$gene)),recursive=F)
 rm(aeqtls,fsnp.genes)
 
-load(snp.exploc)
-snp.exp$snps <- t(as.matrix(snp.exp$snps))
-snp.exp$gene <- t(as.matrix(snp.exp$gene))
-snp.exp$gene <- snp.exp$gene[rownames(snp.exp$snps),]
-gc()
-
-db <- dbConnect(dbDriver("SQLite"),dbname="D:/gene_snp.db",loadable.extensions=T)
+snp.cases <- scan(snp.file,what="character",nlines=1,sep="\n")
+snp.cases <- strsplit(snp.cases,split="\t")[[1]]
+snp.cases <- snp.cases[-1]
+exp.cases <- scan(exp.file,what="character",nlines=1,sep="\n")
+exp.cases <- strsplit(exp.cases,"\t")[[1]]
+exp.cases <- exp.cases[-1]
+if(any(exp.cases!=snp.cases)){
+  stop("Problem with MatrixEQTL inputs")
+  
+}
 
 
 test.df <- do.call("rbind",lapply(1:length(test.indices),function(x){
-  data.frame(Sample=rownames(snp.exp$gene)[test.indices[[x]]],Kfold=x,Index=test.indices[[x]])
+  data.frame(Sample=exp.cases[test.indices[[x]]],Kfold=x,Index=test.indices[[x]])
 }))
 
 train.df <-test.df <- do.call("rbind",lapply(1:length(train.indices),function(x){
-  data.frame(Sample=rownames(snp.exp$gene)[train.indices[[x]]],Kfold=x,Index=train.indices[[x]])
+  data.frame(Sample=exp.cases[train.indices[[x]]],Kfold=x,Index=train.indices[[x]])
 }))
 
 dbWriteTable(db,name="testSamples",test.df,row.names=F,overwrite=T,append=F)
 dbWriteTable(db,name="trainSamples",train.df,row.names=F,overwrite=T,append=F)
+dbSendQuery(db,"Create index k on testSamples(Kfold)")
+dbSendQuery(db,"Create index ktr on trainSamples(Kfold)")
+
+dbDisconnect(db)
 
 
-gene.melt <- melt(snp.exp$gene,id.vars=rownames(snp.exp$gene),variable.name="gene")
-colnames(gene.melt) <- c("Sample","Gene","Value")
-dbWriteTable(db,"gene",gene.melt,row.names=F,overwrite=T,append=F)
-rm(gene.melt)
-
-snpcols <- length(colnames(snp.exp$snps))
-snpcol.chunks <- chunk(seq(snpcols),chunk.size=20000)
-
-
-for(i in 1:length(snpcol.chunks)){
-  tsnp <- melt(snp.exp$snps[,snpcol.chunks[[i]]])
-  colnames(tsnp)<- c("Sample","Snps","Value")
-  write.table(tsnp,file=snp.melt.file,append=T,quote=F,sep="\t",row.names=F,col.names=ifelse(i==1,T,F))
-  #dbWriteTable(db,name="Snps",tsnp,row.names=F,append=T,overwrite=F)
-}
-
-
-dbSendQuery(conn=db,statement="CREATE INDEX gs ON gene(Gene,Sample)")
-dbSendQuery(conn=db,statement="CREATE INDEX ss ON Snps(Snps,Sample)")
-
-
-
-system.time(tg <- dbGetQuery(db,statement="select * from gene where Sample in (select Sample from testSamples where Kfold=1) and Gene='MTL5'"))
-ts <- dbGetQuery(db,statement="select * from Snps where Sample in (select Sample from testSamples where Kfold=1) and Snps='rs7129419'")
-
-tg
 
