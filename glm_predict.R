@@ -4,18 +4,19 @@ library(glmnet)
 library(BatchExperiments)
 library(reshape2)
 library(RSQLite)
+library(doParallel)
 
 
 if(Sys.info()['sysname']=="Windows"){
   root.dir <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/"
   out.dir <- root.dir
   dbfile <- "D:/gene_snp.db"
-  chunks <- 10
+  chunks <- 200
 }else{
   root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
-  out.dir <- paste0(root.dir,"57-fold")
+  out.dir <- paste(root.dir,"57-fold",sep="")
   dbfile <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/gene_snp.db"
-  chunks=200
+  chunks=30
 }
 
 
@@ -32,26 +33,29 @@ all.iters <- lapply(chunk(1:nrow(all.iters),n.chunks=chunks),function(x)all.iter
 
 glm_predict <- function(t.iters,dbfile){
 
-  registerDoParallel(cores=5)
+  registerDoParallel(cores=4)
   
   glm.engine <- function(Kfold,Gene){
     
     db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
     dbGetQuery(db,"pragma journal_mode=TRUNCATE")
-    querytrain <- paste0("select * from Snps where Sample in (select Sample from trainSamples where Kfold = ",Kfold,") and Snps in (select SNP from eqtls where Gene='",Gene,"' and Kfold=",Kfold,")order by Sample")
+    querytrain <- paste("select * from Snps where Sample in (select Sample from trainSamples where Kfold = ",Kfold,") and Snps in (select SNP from eqtls where Gene='",Gene,"' and Kfold=",Kfold,")order by Sample",sep="")
     snp.train <- dbGetQuery(db,querytrain)
     snp.train <- acast(data=snp.train,formula=Sample~Snps,value.var="Value")
-    querytest <- paste0("select * from Snps where Sample in (select Sample from testSamples where Kfold = ",Kfold,") and Snps in (select SNP from eqtls where Gene='",Gene,"' and Kfold=",Kfold,") order by Sample")
+    querytest <- paste("select * from Snps where Sample in (select Sample from testSamples where Kfold = ",Kfold,") and Snps in (select SNP from eqtls where Gene='",Gene,"' and Kfold=",Kfold,") order by Sample",sep="")
     snp.test <- dbGetQuery(db,querytest)
     snp.test <- acast(data=snp.test,formula=Sample~Snps,value.var="Value")
-    exp.query <- paste0("select Value from gene where Sample in (select Sample from trainSamples where Kfold=",Kfold,") and Gene='",Gene,"' order by Sample")
+    exp.query <- paste("select Value from gene where Sample in (select Sample from trainSamples where Kfold=",Kfold,") and Gene='",Gene,"' order by Sample",sep="")
     exp.train <- unlist(dbGetQuery(db,exp.query))
     dbDisconnect(db)
     cv1 <- tryCatch(cv.glmnet(x=snp.train,exp.train,alpha=0.95),error=function(e)e)
     if(inherits(cv1,"error")){
-      if(sum(sort(tabulate(snp.train),decreasing=T)[-1])>=2){
+      if(any(apply(snp.train,MARGIN=2,function(x)sum(sort(tabulate(x),decreasing=T)[-1]))>=2)){
+        badsamples <- is.na(exp.train)
+        snp.train <- snp.train[!badsamples,,drop=F]
+        exp.train <- exp.train[!badsamples]
         t <- 0
-        while(inherits(cv1,"error")||t<10){
+        while(inherits(cv1,"error")&&t<3){
           cv1 <- tryCatch(cv.glmnet(x=snp.train,exp.train,alpha=0.95),error=function(e)e)
           t <- t+1
         }
