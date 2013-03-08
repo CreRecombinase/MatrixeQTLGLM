@@ -11,12 +11,12 @@ if(Sys.info()['sysname']=="Windows"){
   root.dir <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/"
   out.dir <- root.dir
   dbfile <- "D:/gene_snp.db"
-  chunks <- 200
+  chunks <- 100
 }else{
   root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
   out.dir <- paste(root.dir,"57-fold",sep="")
   dbfile <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/gene_snp.db"
-  chunks=30
+  chunks=100
 }
 
 
@@ -86,13 +86,13 @@ glm_predict <- function(t.iters,dbfile){
 
 
 
-m.dir <- tempfile("glm.res",tmpdir=out.dir)
+#m.dir <- tempfile("glm_res",tmpdir=out.dir)
 
-glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite","doParallel"))
+#glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite","doParallel"))
 
-batchMap(glm.reg,fun=glm_predict,t.iters=all.iters[1:10],more.args=list(dbfile=dbfile))
+#batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbfile=dbfile))
 
 
-submitJobs(glm.reg)
+#submitJobs(glm.reg)
 
 
