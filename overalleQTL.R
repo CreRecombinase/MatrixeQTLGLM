@@ -26,8 +26,8 @@ MEQTL.params <- list(
 )
   
 
-load(snp.exploc)
-load(anno.loc)
+load(snp.expdata)
+load(annofile)
 with(MEQTL.params,Matrix_eQTL_main(
       snps=snp.exp$snps,
       gene=snp.exp$gene,
