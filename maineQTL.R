@@ -6,28 +6,27 @@ library(plyr)
 library(BatchExperiments)
 library(MatrixEQTL)
 
-snp.type <- "unimputed"
-cancer.type <- "brca_RNAseq"
-root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/"
-out.dir <- paste(root.dir,"82-fold/",sep="")
+###USAGE maineQTL.R <out.files> <root.dir> <out-dir> <annofile> <snp.expfile> <samples> <fold-validation>
+oargs <- commandArgs(trailingOnly=TRUE)
+args <- list()
+args$OUT.FILES <- oargs[1]
+args$ROOT.DIR <- oargs[2]
+args$OUT.DIR <- oargs[3]
+args$ANNOFILE <- oargs[4]
+args$SNP.EXPFILE <- oargs[5]
+args$SAMPLES <- as.integer(oargs[6])
+args$FOLD-VALIDATION <- as.integer(oargs[7])
+
+
+root.dir <- args$ROOT.DIR
+out.dir <- args$OUT.DIR
 
 setwd(root.dir)
-snp.filepath <- paste(snp.type,cancer.type,"snp.txt",sep="_")
-exp.filepath <- paste(cancer.type,"expression.txt",sep="_")
 
-snp.loc.fp <- paste(snp.type,cancer.type,"snp_anno.txt",sep="_")
-exp.loc.fp <- paste(cancer.type,"expression_anno.txt")
 
-annofile <- "rnaseq_brca_anno.Rdata"
-snp.expdata <- "rnaseq_snp_exp.Rdata"
+annofile <- args$ANNOFILE
+snp.expdata <- args$SNP.EXPFILE
   
-  
-#if(!file.exists(datfile)){
-#  shell(paste("/home/nwk2/glm_eqtl/MatrixeQTLGLM/load_static.R","F",snp.filepath,exp.filepath,snp.loc.fp,exp.loc.fp,datfile,sep=" "))
-#}else{
-####Load datlist containing SNP,EXP (preloaded into matrixeqtl), and anno data 
-#load(annofile)
-#}
 
 
 ###Function for cross validation
@@ -56,21 +55,20 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
   
 }
 
-col.command <- paste("head -1 ",exp.filepath," | awk '{print NF}'",sep="")
-
-samples <- as.integer(system(col.command,intern=T))-1
+samples <- args$SAMPLES
 
 
-train.indices <- chunk(rep(1:samples,82),n.chunks=82)
-#57 is a factor of 513, the number of samples
-test.indices <- chunk(1:samples,chunk.size=10)
+train.indices <- chunk(rep(1:samples,args$FOLD-VALIDATION),n.chunks=args$FOLD-VALIDATION)
+
+
+test.indices <- chunk(1:samples,chunk.size=ceiling(samples/args$FOLD-VALIDATION)
 
 
 train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLIFY=F)
 
 MEQTL.params <- list(
-  output.file.name.tra=paste(out.dir,snp.type,"_",cancer.type,"_trans",sep=""),
-  output.file.name.cis=paste(out.dir,snp.type,"_",cancer.type,"_cis",sep=""),
+  output.file.name.tra=paste(out.dir,args$OUT.FILES,"_trans",sep=""),
+  output.file.name.cis=paste(out.dir,args$OUT.FILES,"_cis",sep=""),
   useModel=modelLINEAR,
   verbose=T,
   pvOutputThreshold.tra=1e-8,
@@ -79,8 +77,8 @@ MEQTL.params <- list(
   pvalue.hist=F
 )
 
-m.dir <- tempfile(paste("meqtl.res",cancer.type,"_",snp.type,sep=""),tmpdir=out.dir)
-registry.name <- paste("meqtl_reg_",cancer.type,sep="")
+m.dir <- tempfile(paste("meqtl.res",args$OUT.FILES,sep=""),tmpdir=out.dir)
+registry.name <- paste("meqtl_reg_",args$OUT.FILES,sep="")
 
 MEQTL.reg <- makeRegistry(registry.name,file.dir=m.dir,packages="MatrixEQTL")
 
