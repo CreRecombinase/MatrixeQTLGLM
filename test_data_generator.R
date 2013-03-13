@@ -1,11 +1,11 @@
 #script for generating test data for mat.train
 library(MatrixEQTL)
 #number of patients
-N=513
+N=50
 #number of SNPs 
-S <- 300000
+S <- 20
 #number of genes
-G <- 17000
+G <- 10
 
 #Chromosomes
 C <- 23
@@ -17,8 +17,20 @@ GS <- 10000
 
 #SNP data
 SNPdata <- matrix(sample(0:2,N*S,replace=T),S,N)
+norm.SNP <- (SNPdata-rowMeans(SNPdata))/apply(SNPdata,MARGIN=1,FUN=sd)
+norm.SNP <- t(norm.SNP)
 
 expdata <- matrix(runif(G*N),G,N)
+norm.exp <- expdata-rowMeans(expdata)
+
+bcor <- norm.exp%*%norm.SNP
+
+tmat <-SlicedData$new(SNPdata)
+tmat$RowStandardizeCentered()
+
+tmat <- as.matrix(tmat)
+mean(tmat[1,])
+
 
 SNPpos <- sample(seq(CS),S,replace=F)
 SNPchrm <- sample(seq(C),S,replace=T)
@@ -36,6 +48,8 @@ gene.anno <- data.frame(gene.name,genechrm,genestart,geneend)
 snp.anno <- snp.anno[order(SNPchrm,SNPpos),]
 
 gene.anno <- gene.anno[order(genechrm,genestart),]
+
+
 
 snp.exp <- list(snps=SlicedData$new(SNPdata),gene=SlicedData$new(expdata))
 save(snps.exp,file="test_snps_exp.Rdata")

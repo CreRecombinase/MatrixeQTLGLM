@@ -26,7 +26,7 @@ kfold <- 82
 
 
 train.indices <- chunk(rep(1:sample.num,kfold),n.chunks=kfold)
-test.indices <- chunk(1:sample.num,chunk.size=10)
+test.indices <- chunk(1:sample.num,chunk.size=ceiling(sample.num/kfold))
 train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLIFY=F)
 
 

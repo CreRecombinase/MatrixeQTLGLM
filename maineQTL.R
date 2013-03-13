@@ -58,7 +58,7 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
 samples <- args$SAMPLES
 
 
-train.indices <- chunk(rep(1:samples,args$FOLD-VALIDATION),n.chunks=args$FOLD.VALIDATION)
+train.indices <- chunk(rep(1:samples,args$FOLD.VALIDATION),n.chunks=args$FOLD.VALIDATION)
 
 
 test.indices <- chunk(1:samples,chunk.size=ceiling(samples/args$FOLD.VALIDATION))
