@@ -89,5 +89,5 @@ batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indice
 
 
 
-submitJobs(MEQTL.reg)
+submitJobs(MEQTL.reg,resources=list(queue="short",memory=35000,time="3:00"))
 
