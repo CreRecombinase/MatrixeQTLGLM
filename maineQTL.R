@@ -15,7 +15,7 @@ args$OUT.DIR <- oargs[3]
 args$ANNOFILE <- oargs[4]
 args$SNP.EXPFILE <- oargs[5]
 args$SAMPLES <- as.integer(oargs[6])
-args$FOLD-VALIDATION <- as.integer(oargs[7])
+args$FOLD.VALIDATION <- as.integer(oargs[7])
 
 
 root.dir <- args$ROOT.DIR
@@ -58,10 +58,10 @@ mat.train <- function(i,snp.exploc,anno.loc,train.indices,MEQTL.params){
 samples <- args$SAMPLES
 
 
-train.indices <- chunk(rep(1:samples,args$FOLD-VALIDATION),n.chunks=args$FOLD-VALIDATION)
+train.indices <- chunk(rep(1:samples,args$FOLD-VALIDATION),n.chunks=args$FOLD.VALIDATION)
 
 
-test.indices <- chunk(1:samples,chunk.size=ceiling(samples/args$FOLD-VALIDATION)
+test.indices <- chunk(1:samples,chunk.size=ceiling(samples/args$FOLD.VALIDATION))
 
 
 train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLIFY=F)
@@ -90,4 +90,6 @@ batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indice
 
 
 submitJobs(MEQTL.reg,resources=list(queue="short",memory=35000,time="3:00"))
+Sys.sleep(35)
+                      
 
