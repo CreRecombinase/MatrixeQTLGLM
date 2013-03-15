@@ -2,17 +2,17 @@
 #3/8/13
 #NWK
 library(MatrixEQTL)
-
-snp.type <- "imputed"
-cancer.type <- "brca"
-root.dir <- "/scratch/nwk2/mEQTL_ERpnc/imputed_eqtl/"
-out.dir <- paste(root.dir,"output")
+oargs <- commandArgs(trailingOnly=T)
+snp.type <- "unimputed"
+cancer.type <- orags[1]
+root.dir <- paste0("/scratch/nwk2/mEQTL_ERpnc/imputed_eqtl/",oargs[1],"/")
+out.dir <- paste(root.dir,"output/")
 
 setwd(root.dir)
 
 
-annofile <- "imputed_anno.Rdata"
-snp.expdata <- "imputedSNP.genes.Rdata"
+annofile <- paste0("RNAseq_",oargs[1],".Rdata")
+snp.expdata <- "rnaseq_brca_anno.Rdata"
   
 MEQTL.params <- list(
   output.file.name.tra=paste(out.dir,snp.type,"_",cancer.type,"_trans",sep=""),
