@@ -91,7 +91,7 @@ batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indice
 
 
 
-submitJobs(MEQTL.reg,resources=list(queue="short",memory=10000,time=args$time,threads=1))
+submitJobs(MEQTL.reg,resources=list(queue="short",memory=10000,time=args$TIME,threads=1))
 Sys.sleep(35)
                       
 
