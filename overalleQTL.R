@@ -5,7 +5,7 @@ library(MatrixEQTL)
 oargs <- commandArgs(trailingOnly=T)
 snp.type <- "unimputed"
 cancer.type <- oargs[1]
-root.dir <- paste0("/scratch/nwk2/mEQTL_ERpnc/imputed_eqtl/",oargs[1],"/")
+root.dir <- paste0("/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/",oargs[1],"/")
 out.dir <- paste(root.dir,"output/")
 
 setwd(root.dir)
