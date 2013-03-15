@@ -6,7 +6,7 @@ library(plyr)
 library(BatchExperiments)
 library(MatrixEQTL)
 
-###USAGE maineQTL.R <out.files> <root.dir> <out-dir> <annofile> <snp.expfile> <samples> <fold-validation>
+###USAGE maineQTL.R <out.files> <root.dir> <out-dir> <annofile> <snp.expfile> <samples> <fold-validation> <time> <CISTRA|CIS>
 oargs <- commandArgs(trailingOnly=TRUE)
 args <- list()
 args$OUT.FILES <- oargs[1]
@@ -16,6 +16,8 @@ args$ANNOFILE <- oargs[4]
 args$SNP.EXPFILE <- oargs[5]
 args$SAMPLES <- as.integer(oargs[6])
 args$FOLD.VALIDATION <- as.integer(oargs[7])
+args$TIME <- oargs[8]
+args$CISTRA <- oargs[9]
 
 
 root.dir <- args$ROOT.DIR
@@ -71,7 +73,7 @@ MEQTL.params <- list(
   output.file.name.cis=paste(out.dir,args$OUT.FILES,"_cis",sep=""),
   useModel=modelLINEAR,
   verbose=T,
-  pvOutputThreshold.tra=1e-8,
+  pvOutputThreshold.tra=ifelse(args$CISTRA=="CISTRA",1e-8,0),
   pvOutputThreshold.cis=1e-8,
   cisDist=1e6,
   pvalue.hist=F
@@ -89,7 +91,7 @@ batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indice
 
 
 
-submitJobs(MEQTL.reg,resources=list(queue="short",memory=35000,time="3:00"))
+submitJobs(MEQTL.reg,resources=list(queue="short",memory=10000,time=args$time,threads=1))
 Sys.sleep(35)
                       
 
