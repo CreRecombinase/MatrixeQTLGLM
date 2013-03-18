@@ -41,9 +41,9 @@ while getopts "ixsgf:d:" opt; do
 done
 if $index; then
     if $snps; then
-	sqlite3 $database "pragma main.page_size=4096;pragma main.cache_size=10000; pragma main.locking_mode=EXCLUSIVE;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='/scratch/nwk2/';create index ss on snps(Snp,Sample)"
+	sqlite3 $database "pragma main.page_size=4096;pragma main.cache_size=10000; pragma main.locking_mode=EXCLUSIVE;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index ss on snps(Snp,Sample)"
 	else
-	sqlite3 $database "pragma main.page_size=4096;pragma main.cache_size=10000; pragma main.locking_mode=EXCLUSIVE;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='/scratch/nwk2/';create index gs on gene(Gene,Sample)"
+	sqlite3 $database "pragma main.page_size=4096;pragma main.cache_size=10000; pragma main.locking_mode=EXCLUSIVE;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index gs on gene(Gene,Sample)"
     fi
     #sqlite3 $database "pragma journal_mode=memory; pragma synchronous=0; pragma cache_size=500000; create 
 elif $import; then
@@ -52,8 +52,8 @@ elif $import; then
 	sqlite3  $database <snp_metafile.sql
 	rm snp_metafile.sql
 	else
-	echo -e "pragma journal_mode=memory; pragma synchronous=0;\n pragma cache_size=250000;\n create table gene(Gene TEXT, Sample TEXT, Value REAL);\n.separator \"\\t\"\n.headers on\n" >gene_metafile.sql
-	sqlite3 $database -init gene_metafile.sql ".import $file gene"
+	echo -e "pragma journal_mode=memory; pragma synchronous=0;\n pragma cache_size=250000;\n create table gene(Gene TEXT, Sample TEXT, Value REAL);\n.separator \"\\t\"\n.headers on\n.import $file gene" >gene_metafile.sql
+	sqlite3 $database <gene_metafile.sql
 	rm gene_metafile.sql
-    fi
+	fi
 fi

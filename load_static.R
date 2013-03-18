@@ -10,9 +10,9 @@ snp.exp <- list()
 
 #Usage <SNPEXP|ANNO>  (If Using arg SNPEXP) <Use_MatrixEQTL_FileReader(T|F)> <SNP_File> <Expression_File> <Output_Rdata_Path>
 #Returns a list in that order
+args <- list()
 oargs <- commandArgs(trailingOnly=TRUE)
 print(oargs)
-args <- list()
 args$EXPANNO <- oargs[1]
 if(args$EXPANNO=="ANNO"){
   args$SNP <- oargs[2]
@@ -41,8 +41,14 @@ load.data.matrix <- function(filepath){
 }
 load.anno <- function(filepath){
   #Reads in Annotations
-  read.csv.sql(filepath,sep="\t",header=T,eol="\n")
+  expargs <- scan(filepath,what="character",nlines=1,sep="\n")
+  expargs <- strsplit(expargs,split="\t")[[1]]
+  expargs <- expargs[-1]
+  tf <- read.csv.sql(filepath,sep="\t",header=T,eol="\n")
+  colnames(tf)<-expargs
+  return(tf)
 }
+
 
 if(args$EXPANNO=="ANNO"){
 annolist$snp.anno <- load.anno(args$SNP)
@@ -57,7 +63,6 @@ save(annolist,file=args$dpath)
     snp.exp[["snps"]]$fileSkipRows <- 1
     snp.exp[["snps"]]$fileSkipColumns <- 1
     snp.exp[["snps"]]$LoadFile(args$SNP)
-    snp.cols <- scan()
     snp.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP)) 
     sargs <- scan(args$SNP,what="character",nlines=1,sep="\n")
     sargs <- strsplit(sargs,split="\t")[[1]]

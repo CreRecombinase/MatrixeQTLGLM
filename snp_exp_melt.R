@@ -6,11 +6,11 @@ library(BBmisc)
 
 ###USAGE  <Rdata file> <SNPS|GENE> (if SNPS) <SNPCHUNKS> <MELTFILE>
 
-
+args <- list()
 
 oargs <- commandArgs(trailingOnly=TRUE)
 print(oargs)
-args <- list()
+  
 args$RDATA <- oargs[1]
 args$SNPSGENE <- oargs[2]
 if(args$SNPSGENE=="SNPS"){
@@ -21,6 +21,7 @@ if(args$SNPSGENE=="SNPS"){
 }else{
   stop(args)
 }
+
 
 
 load(args$RDATA)

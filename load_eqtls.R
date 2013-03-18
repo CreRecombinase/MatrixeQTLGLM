@@ -8,8 +8,8 @@ args <- list()
 oargs <- commandArgs(trailingOnly=TRUE)
 args$RESULTS_DIR <- oargs[1]
 args$DATABASE_FILE <- oargs[2]
-args$KFOLD <- oargs[3]
-args$SAMPLE_NUM <- oargs[4]
+args$KFOLD <- as.integer(oargs[3])
+args$SAMPLE_NUM <- as.integer(oargs[4])
 args$SAMPLE_FILE <- oargs[5]
 args$REWRITE <- as.logical(oargs[6])
 
@@ -30,9 +30,17 @@ if(args$REWRITE){
 
   mapply(FUN=write.db.file,eqtl.file=eqtl.files,cis.trans=cis.transs,kfold=kfolds,MoreArgs=list(dbfile=args$DATABASE_FILE))
 }
-db <- dbConnect(drv=dbDriver("SQLite"),dbname=args$DATABSE_FILE)
-dbSendQuery(db,"Create index sgkc on eqtls(SNP,Gene,Kfold,CisTrans)")
-dbSendQuery(db,"Create index gkc on eqtls(Gene,Kfold,CisTrans)")
+
+
+db <- dbConnect(drv=dbDriver("SQLite"),dbname=args$DATABASE_FILE)
+
+dbSendQuery(db,"Create index sgkc on eqtls(SNP,gene,Kfold,CisTrans)")
+dbSendQuery(db,"Create index gkc on eqtls(gene,Kfold,CisTrans)")
+dbSendQuery(db,"create table neqtls as select eqtls.* from eqtls INNER JOIN (select SNP,Gene from eqtls where CisTrans=\"trans\" group by SNP,Gene having count(*)>9) dtable_2 ON dtable_2.SNP=eqtls.SNP AND dtable_2.gene=eqtls.gene")
+dbSendQuery(db,"INSERT INTO neqtls select eqtls.* from eqtls INNER JOIN (select SNP,Gene from eqtls where CisTrans=\"cis\" group by SNP,Gene having count(*)>9) dtable_2 ON dtable_2.SNP=eqtls.SNP AND dtable_2.gene=eqtls.gene")
+
+distinct.snps <- dbGetQuery(db,"select distinct SNP from neqtls")
+
 
 
 
@@ -44,7 +52,7 @@ train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLI
 
 
 
-sample.cases <- scan(args$SAMPLE_CASES,what="character",sep="\n",nlines=1)
+sample.cases <- scan(args$SAMPLE_FILE,what="character",sep="\n",nlines=1)
 sample.cases <- strsplit(sample.cases,"\t")[[1]][-1]
 
 

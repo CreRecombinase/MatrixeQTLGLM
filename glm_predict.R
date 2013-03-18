@@ -24,6 +24,8 @@ if(Sys.info()['sysname']=="Windows"){
 db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
 
 all.iters <- dbGetQuery(db,"select distinct Gene,Kfold from eqtls")
+
+n.na.iters <- dbGetQuery(db,"select SNP,Gene from eqtls where SNP,Gene in (select SNP,Gene from eqtls group by SNP,Gene having count(SNP,Gene) > 56)")
 dbDisconnect(db)
 
 

@@ -31,6 +31,9 @@ er.positive.seq <- exp.data[,g.erstat$bcr_patient_barcode[g.erstat$ERSTAT==1]]
 er.negative.seq <- exp.data[,g.erstat$bcr_patient_barcode[g.erstat$ERSTAT==0]]
 
 
+write.table(er.positive.seq,"brca_RNAseq_positive.txt",sep="\t",col.names=T,row.names=T,quote=F)
+write.table(er.negative.seq,"brca_RNAseq_negative.txt",sep="\t",col.names=T,row.names=T,quote=F)
 
+rnaseq.data <- read.csv.sql("brca_RNAseq_negative.txt",sep="\t",header=T,eol="\n")
 
 

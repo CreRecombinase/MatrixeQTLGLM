@@ -7,6 +7,7 @@ library(BatchExperiments)
 library(MatrixEQTL)
 
 ###USAGE maineQTL.R <out.files> <root.dir> <out-dir> <annofile> <snp.expfile> <samples> <fold-validation> <time> <CISTRA|CIS>
+
 oargs <- commandArgs(trailingOnly=TRUE)
 args <- list()
 args$OUT.FILES <- oargs[1]
