@@ -22,7 +22,7 @@ write.db.file <- function(eqtl.file,cis.trans,kfold,dbfile){
   db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
   eqtl <- read.csv.sql(eqtl.file,sep="\t",header=T,eol="\n")
   eqtl$Kfold<-kfold
-  eqtl$cis.trans <- cis.trans
+  eqtl$CisTrans <- cis.trans
   dbWriteTable(db,name="eqtls",eqtl,row.names=F,append=T)
   dbDisconnect(db)
 }
@@ -40,8 +40,8 @@ train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLI
 
 
 db <- dbConnect(drv=dbDriver("SQLite"),dbname=args$DATABSE_FILE)
-dbSendQuery(db,"Create index sgk on eqtls(SNP,Gene,Kfold)")
-dbSendQuery(db,"Create index gk on eqtls(Gene,Kfold)")
+dbSendQuery(db,"Create index sgkc on eqtls(SNP,Gene,Kfold,CisTrans)")
+dbSendQuery(db,"Create index gkc on eqtls(Gene,Kfold,CisTrans)")
 
 sample.cases <- scan(args$SAMPLE_CASES,what="character",sep="\n",nlines=1)
 sample.cases <- strsplit(sample.cases,"\t")[[1]][-1]
