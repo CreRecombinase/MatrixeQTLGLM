@@ -48,12 +48,18 @@ if $index; then
     #sqlite3 $database "pragma journal_mode=memory; pragma synchronous=0; pragma cache_size=500000; create 
 elif $import; then
     if $snps; then
-	echo -e "pragma journal_mode=memory; pragma synchronous=0; pragma cache_size=250000;create table snps(Snp TEXT, Sample TEXT, Value INTEGER);\n.separator \"\\t\"\n.headers on\n.import $file snps" > snp_metafile.sql
+	head -1 $file >neqtlsnps.txt
+	grep -F -f <(eqtlsnps.txt) $file >> neqtlsnps.txt
+	echo -e "pragma journal_mode=memory; pragma synchronous=0; pragma cache_size=250000;create table snps(Snp TEXT, Sample TEXT, Value INTEGER);\n.separator \"\\t\"\n.headers on\n.import neqtlsnps.txt snps" > snp_metafile.sql
 	sqlite3  $database <snp_metafile.sql
 	rm snp_metafile.sql
+	rm neqtlsnps.txt
 	else
-	echo -e "pragma journal_mode=memory; pragma synchronous=0;\n pragma cache_size=250000;\n create table gene(Gene TEXT, Sample TEXT, Value REAL);\n.separator \"\\t\"\n.headers on\n.import $file gene" >gene_metafile.sql
+	head -1 $file > neqtlgenes.txt
+	grep -F -f <(eqtlgenes.txt) $file >> neqtlgenes.txt
+	echo -e "pragma journal_mode=memory; pragma synchronous=0;\n pragma cache_size=250000;\n create table gene(Gene TEXT, Sample TEXT, Value REAL);\n.separator \"\\t\"\n.headers on\n.import neqtlgenes.txt gene" >gene_metafile.sql
 	sqlite3 $database <gene_metafile.sql
 	rm gene_metafile.sql
+	rm neqtlgenes.txt
 	fi
 fi

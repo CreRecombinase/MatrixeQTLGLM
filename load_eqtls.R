@@ -40,6 +40,10 @@ dbSendQuery(db,"create table neqtls as select eqtls.* from eqtls INNER JOIN (sel
 dbSendQuery(db,"INSERT INTO neqtls select eqtls.* from eqtls INNER JOIN (select SNP,Gene from eqtls where CisTrans=\"cis\" group by SNP,Gene having count(*)>9) dtable_2 ON dtable_2.SNP=eqtls.SNP AND dtable_2.gene=eqtls.gene")
 
 distinct.snps <- dbGetQuery(db,"select distinct SNP from neqtls")
+distinct.gene <- dbGetQuery(db,"select distinct gene from neqtls")
+
+write.table(distinct.snps,file="eqtlsnps.txt",sep="\t",col.names=T,row.names=F,quote=F)
+write.table(distinct.gene,file="eqtlgenes.txt",sep="\t",col.names=T,row.names=F,quote=F)
 
 
 
