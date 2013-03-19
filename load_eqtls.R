@@ -36,14 +36,16 @@ db <- dbConnect(drv=dbDriver("SQLite"),dbname=args$DATABASE_FILE)
 
 dbSendQuery(db,"Create index sgkc on eqtls(SNP,gene,Kfold,CisTrans)")
 dbSendQuery(db,"Create index gkc on eqtls(gene,Kfold,CisTrans)")
-dbSendQuery(db,"create table neqtls as select eqtls.* from eqtls INNER JOIN (select SNP,Gene from eqtls where CisTrans=\"trans\" group by SNP,Gene having count(*)>9) dtable_2 ON dtable_2.SNP=eqtls.SNP AND dtable_2.gene=eqtls.gene")
-dbSendQuery(db,"INSERT INTO neqtls select eqtls.* from eqtls INNER JOIN (select SNP,Gene from eqtls where CisTrans=\"cis\" group by SNP,Gene having count(*)>9) dtable_2 ON dtable_2.SNP=eqtls.SNP AND dtable_2.gene=eqtls.gene")
+#########get just eqtls that are in every cross validation
+#Subset on genes that have SOME prediction in every cross validation
+dbSendQuery(db,"create table ggenes as SELECT gene FROM (SELECT gene,count(distinct Kfold) from eqtls group by gene having count(distinct Kfold)>9)")
+distinct.genes <- dbGetQuery(db,"select distinct gene from ggenes")
+distinct.snps <- dbGetQuery(db,"select distinct SNP from eqtls,ggenes where eqtls.gene=ggenes.gene")
 
-distinct.snps <- dbGetQuery(db,"select distinct SNP from neqtls")
-distinct.gene <- dbGetQuery(db,"select distinct gene from neqtls")
+
 
 write.table(distinct.snps,file="eqtlsnps.txt",sep="\t",col.names=T,row.names=F,quote=F)
-write.table(distinct.gene,file="eqtlgenes.txt",sep="\t",col.names=T,row.names=F,quote=F)
+write.table(distinct.genes,file="eqtlgenes.txt",sep="\t",col.names=T,row.names=F,quote=F)
 
 
 
@@ -56,15 +58,15 @@ train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLI
 
 
 
-sample.cases <- scan(args$SAMPLE_FILE,what="character",sep="\n",nlines=1)
-sample.cases <- strsplit(sample.cases,"\t")[[1]][-1]
+sample.cases <- scan(args$SAMPLE_FILE,what="character",sep="\t",nlines=1)[-1]
+
 
 
 test.df <- do.call("rbind",lapply(1:length(test.indices),function(x){
   data.frame(Sample=sample.cases[test.indices[[x]]],Kfold=x,Index=test.indices[[x]])
 }))
 
-train.df <-test.df <- do.call("rbind",lapply(1:length(train.indices),function(x){
+train.df<- do.call("rbind",lapply(1:length(train.indices),function(x){
   data.frame(Sample=sample.cases[train.indices[[x]]],Kfold=x,Index=train.indices[[x]])
 }))
 

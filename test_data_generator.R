@@ -4,21 +4,21 @@ library(MatrixEQTL)
 test.data.directory <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/testdata/"
 setwd(test.data.directory)
 #number of patients
-N=50
+N=100
 #number of SNPs 
-S <- 200
+S <- 2000
 #number of genes
-G <- 100
+G <- 1000
 
-#number of transeQTLs
-te <- 150
-#number of ciseQTLs
-ce <- 50
+#number of total eqtls
+te <- 1000
+#number of ciseqtls
+ce <- 100
 
 #Chromosomes
 C <- 10
 #Chromosome size
-CS <- 1000
+CS <- 10000
 
 #Gene size
 GS <- 100
@@ -62,24 +62,14 @@ expdata <- expdata[,sample(1:N,N,replace=F)]
 snp.anno <- data.frame(snp.name,SNPchrm,SNPpos,stringsAsFactors=F)
 gene.anno <- data.frame(gene.name,genechrm,genestart,geneend)
 
-head(gene.eqtl,te)
 for(i in 1:ce){
-  snp.anno$SNPchrm[ snp.anno$snp.name %in% snp.eqtl[i]] <- gene.anno$genechrm[gene.anno$gene.name %in% gene.eqtl[i]]
-  snp.anno$SNPpos[ snp.anno$snp.name %in% snp.eqtl[i]] <- sample(gene.anno$genestart[ gene.anno$gene.name %in% gene.eqtl[i]]:gene.anno$geneend[ gene.anno$gene.name %in% gene.eqtl[i]],size=1)
-}
+   snp.anno$SNPchrm[ snp.anno$snp.name %in% snp.eqtl[i]] <- gene.anno$genechrm[gene.anno$gene.name %in% gene.eqtl[i]]
+   snp.anno$SNPpos[ snp.anno$snp.name %in% snp.eqtl[i]] <- sample(gene.anno$genestart[ gene.anno$gene.name %in% gene.eqtl[i]]:gene.anno$geneend[ gene.anno$gene.name %in% gene.eqtl[i]],size=1)
+ }
 
 
 write.table(SNPdata,"testSNP.txt",col.names=NA,row.names=T,sep="\t",quote=F)
 write.table(expdata,"testexp.txt",col.names=NA,row.names=T,sep="\t",quote=F)
 write.table(snp.anno,"testSNPanno.txt",col.names=T,row.names=F,sep="\t",quote=F)
 write.table(gene.anno,"testgeneanno.txt",col.names=T,row.names=F,sep="\t",quote=F)
-
-
-
-
-snp.exp <- list(snps=SlicedData$new(SNPdata),gene=SlicedData$new(expdata))
-save(snps.exp,file="test_snps_exp.Rdata")
-
-annolist <- list(snp.anno=snp.anno,exp.anno=gene.anno)
-save(annolist,file="test_anno.Rdata")
 

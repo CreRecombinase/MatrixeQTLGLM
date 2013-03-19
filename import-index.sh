@@ -1,5 +1,6 @@
 #!/bin/bash
 #Usage import-index.sh [-i (import) [-s (snps)| -g (genes)]|-x (index) -f <file> -d <database>
+
 import=false
 index=false
 snps=false
@@ -41,25 +42,22 @@ while getopts "ixsgf:d:" opt; do
 done
 if $index; then
     if $snps; then
-	sqlite3 $database "pragma main.page_size=4096;pragma main.cache_size=10000; pragma main.locking_mode=EXCLUSIVE;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index ss on snps(Snp,Sample)"
+	echo -e ".timeout 20000\npragma main.page_size=4096;pragma main.cache_size=10000; pragma synchronous=NORMAL;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index ss on snps(Snp,Sample);" > index_metafile_snps.sql
+	sqlite3 $database < index_metafile_snps.sql
+	rm index_metafile_snps.sql
 	else
-	sqlite3 $database "pragma main.page_size=4096;pragma main.cache_size=10000; pragma main.locking_mode=EXCLUSIVE;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index gs on gene(Gene,Sample)"
+	echo -e ".timeout 20000 \npragma main.page_size=4096;pragma main.cache_size=10000; pragma synchronous=NORMAL;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index gs on gene(Gene,Sample);" > index_metafile_gene.sql
+	sqlite3 $database < index_metafile_gene.sql
+	rm index_metafile_gene.sql
     fi
-    #sqlite3 $database "pragma journal_mode=memory; pragma synchronous=0; pragma cache_size=500000; create 
 elif $import; then
     if $snps; then
-	head -1 $file >neqtlsnps.txt
-	grep -F -f <(eqtlsnps.txt) $file >> neqtlsnps.txt
-	echo -e "pragma journal_mode=memory; pragma synchronous=0; pragma cache_size=250000;create table snps(Snp TEXT, Sample TEXT, Value INTEGER);\n.separator \"\\t\"\n.headers on\n.import neqtlsnps.txt snps" > snp_metafile.sql
+	echo -e ".timeout 20000\npragma journal_mode=memory; pragma synchronous=0; pragma cache_size=250000;create table snps(Snp TEXT, Sample TEXT, Value INTEGER);\n.separator \"\\t\"\n.headers on\n.import $file snps" > snp_metafile.sql
 	sqlite3  $database <snp_metafile.sql
 	rm snp_metafile.sql
-	rm neqtlsnps.txt
 	else
-	head -1 $file > neqtlgenes.txt
-	grep -F -f <(eqtlgenes.txt) $file >> neqtlgenes.txt
-	echo -e "pragma journal_mode=memory; pragma synchronous=0;\n pragma cache_size=250000;\n create table gene(Gene TEXT, Sample TEXT, Value REAL);\n.separator \"\\t\"\n.headers on\n.import neqtlgenes.txt gene" >gene_metafile.sql
+	echo -e ".timeout 20000\npragma journal_mode=memory; pragma synchronous=0;\n pragma cache_size=250000;\n create table gene(Gene TEXT, Sample TEXT, Value REAL);\n.separator \"\\t\"\n.headers on\n.import $file gene" >gene_metafile.sql
 	sqlite3 $database <gene_metafile.sql
 	rm gene_metafile.sql
-	rm neqtlgenes.txt
 	fi
 fi
