@@ -1,9 +1,11 @@
 #Code to generate list of lists to be fed into glm_predict.R
 library(sqldf)
+library(plyr)
 library(RSQLite)
 library(BBmisc)
+library(doParallel)
 args <- list()
-##USAGE <RESULTS_DIR> <DATABSE_FILE> <KFOLD> <SAMPLE_NUM> <SAMPLE_FILE> <REWRITE_EQTL(T|F)>
+##USAGE <RESULTS_DIR> <DATABSE_FILE> <KFOLD> <SAMPLE_NUM> <SAMPLE_FILE> <threads>
 
 oargs <- commandArgs(trailingOnly=TRUE)
 args$RESULTS_DIR <- oargs[1]
@@ -11,25 +13,34 @@ args$DATABASE_FILE <- oargs[2]
 args$KFOLD <- as.integer(oargs[3])
 args$SAMPLE_NUM <- as.integer(oargs[4])
 args$SAMPLE_FILE <- oargs[5]
-args$REWRITE <- as.logical(oargs[6])
+args$THREADS <- as.integer(oargs[6])
 
+registerDoParallel(args$THREADS-1)
 
-if(args$REWRITE){
-  eqtl.files <- dir(args$RESULTS_DIR,pattern="*.txt",full.names=T)
-  kfolds <- as.integer(gsub(".+s([0-9]+).txt","\\1",eqtl.files))
-  cis.transs <- gsub(".+(cis|trans)[0-9]+.txt","\\1",eqtl.files)
+eqtl.files <- dir(args$RESULTS_DIR,pattern="*.txt",full.names=T)
+kfolds <- as.integer(gsub(".+s([0-9]+).txt","\\1",eqtl.files))
+cis.transs <- gsub(".+(cis|trans)[0-9]+.txt","\\1",eqtl.files)
 
-  write.db.file <- function(eqtl.file,cis.trans,kfold,dbfile){
-    db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
-    eqtl <- read.csv.sql(eqtl.file,sep="\t",header=T,eol="\n")
-    eqtl$Kfold<-kfold
-    eqtl$CisTrans <- cis.trans
-    dbWriteTable(db,name="eqtls",eqtl,row.names=F,append=T)
-    dbDisconnect(db)
-  }
-
-  mapply(FUN=write.db.file,eqtl.file=eqtl.files,cis.trans=cis.transs,kfold=kfolds,MoreArgs=list(dbfile=args$DATABASE_FILE))
+write.db.file <- function(eqtl.file,cis.trans,kfold,dbfile){
+  db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
+  dbGetQuery(db,"pragma busy_timeout=20000")
+  dbGetQuery(db,"pragma main.page_size=4096")
+  dbGetQuery(db,"pragma main.cache_size=50000")
+  dbGetQuery(db,"pragma synchronous=0")
+  dbGetQuery(db,"pragma main.journal_mode=WAL")
+  dbGetQuery(db,"pragma temp_store=1")
+  dbGetQuery(db,"pragma temp_store_directory='.'")
+  eqtl <- read.csv.sql(eqtl.file,sep="\t",header=T,eol="\n")
+  eqtl$Kfold<-kfold
+  eqtl$CisTrans <- cis.trans
+  dbWriteTable(db,name="eqtls",eqtl,row.names=F,append=T)
+  dbDisconnect(db)
 }
+qtlargs <- data.frame(eqtl.file=eqtl.files,cis.trans=cis.transs,kfold=kfolds,dbfile=args$DATABASE_FILE)
+print(head(qtlargs))
+
+m_ply(.data=qtlargs,.fun=write.db.file,.parallel=F,.paropts=list(.inorder=F,.export="write.db.file",.packages=c("RSQLite","sqldf")),.progress="text",.inform=T)
+
 
 
 db <- dbConnect(drv=dbDriver("SQLite"),dbname=args$DATABASE_FILE)
