@@ -7,18 +7,14 @@ library(RSQLite,quietly=T)
 library(compiler,quietly=T)
 library(doParallel,quietly=T)
 
+#usage glm_predict.R <DBFILE> <chunks> <out.dir> 
 
-if(Sys.info()['sysname']=="Windows"){
-  root.dir <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/testdata/"
-  out.dir <- root.dir
-  dbfile <- "C:/Users/nknoblau/Documents/R_WS/MatrixeQTLGLM/testdata/testdb.db"
-  chunks <- 10
-}else{
-  root.dir <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/"
-  out.dir <- paste(root.dir,"57-fold",sep="")
-  dbfile <- "/scratch/nwk2/mEQTL_ERpnc/glmEQTL/unimputed_brca/gene_snp.db"
-  chunks=100
-}
+oargs <- commandArgs(trailingOnly=TRUE)
+
+
+dbfile <- oargs[1]
+chunks <- oargs[2]
+out.dir <- oargs[3]
 
 
 
