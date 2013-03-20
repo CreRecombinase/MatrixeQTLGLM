@@ -6,8 +6,8 @@ library(plyr)
 library(BatchExperiments)
 library(MatrixEQTL)
 
-###USAGE maineQTL.R <out.files> <root.dir> <out-dir> <annofile> <snp.expfile> <samples> <fold-validation> <time> <CISTRA|CIS>
-
+###USAGE maineQTL.R <out.files> <root.dir> <out-dir> <annofile> <snp.expfile> <samples> <fold-validation> <time> <queue> <memory> <CISTRA|CIS> 
+makeClusterFunctionsLSF("~/lsf-standard.tmpl")
 oargs <- commandArgs(trailingOnly=TRUE)
 args <- list()
 args$OUT.FILES <- oargs[1]
@@ -18,7 +18,9 @@ args$SNP.EXPFILE <- oargs[5]
 args$SAMPLES <- as.integer(oargs[6])
 args$FOLD.VALIDATION <- as.integer(oargs[7])
 args$TIME <- oargs[8]
-args$CISTRA <- oargs[9]
+args$QUEUE <- oargs[9]
+args$MEMORY <- oargs[10]
+args$CISTRA <- oargs[11]
 
 
 root.dir <- args$ROOT.DIR
@@ -92,7 +94,7 @@ batchMap(MEQTL.reg,mat.train,train.indices=train.indices,i=1:length(train.indice
 
 
 
-submitJobs(MEQTL.reg,resources=list(queue="short",memory=10000,time=args$TIME,threads=1))
+submitJobs(MEQTL.reg,resources=list(queue=args$QUEUE,memory=args$MEMORY,time=args$TIME,threads=1))
 Sys.sleep(35)
                       
 

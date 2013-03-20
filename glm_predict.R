@@ -7,7 +7,8 @@ library(RSQLite,quietly=T)
 library(compiler,quietly=T)
 library(doParallel,quietly=T)
 
-#usage glm_predict.R <DBFILE> <chunks> <out.dir> 
+#usage glm_predict.R <DBFILE> <chunks> <out.dir> <queue> <memory> <time> <threads>
+makeClusterFunctionsLSF("~/lsf-threaded.tmpl")
 
 oargs <- commandArgs(trailingOnly=TRUE)
 
@@ -15,6 +16,10 @@ oargs <- commandArgs(trailingOnly=TRUE)
 dbfile <- oargs[1]
 chunks <- oargs[2]
 out.dir <- oargs[3]
+queue <- oargs[4]
+memory <- as.integer(oargs[5])
+time <- oargs[6]
+threads <- as.integer(oargs[7])
 
 
 
@@ -29,9 +34,9 @@ dbDisconnect(db)
 all.iters <- lapply(chunk(1:nrow(all.iters),n.chunks=chunks),function(x)all.iters[x,])
 
 
-glm_predict <- function(t.iters,dbfile){
+glm_predict <- function(t.iters,dbfile,threads){
 
-  registerDoParallel(cores=4)
+  registerDoParallel(cores=threads-1)
   
   glm.engine <- function(gene,Kfold){
     
@@ -89,9 +94,9 @@ m.dir <- tempfile("glm_res",tmpdir=out.dir)
 
 glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite","doParallel"))
 
-batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbfile=dbfile))
+batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbfile=dbfile,threads=threads))
 
 
-submitJobs(glm.reg)
+submitJobs(glm.reg,resources=list(queue=queue,threads=threads,memory=memory,time=time))
 
 
