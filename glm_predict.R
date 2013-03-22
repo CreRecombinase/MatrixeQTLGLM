@@ -1,37 +1,37 @@
 #Script for creating prediction matrix for eQTLs from glmnet
-library(plyr,quietly=T)
-library(glmnet,quietly=T)
-library(BatchExperiments,quietly=T)
-library(reshape2,quietly=T)
-library(RSQLite,quietly=T)
-library(compiler,quietly=T)
-library(doParallel,quietly=T)
+## library(plyr,quietly=T)
+## library(glmnet,quietly=T)
+## library(BatchExperiments,quietly=T)
+## library(reshape2,quietly=T)
+## library(RSQLite,quietly=T)
+## library(compiler,quietly=T)
+## library(doParallel,quietly=T)
 
 #usage glm_predict.R <DBFILE> <chunks> <out.dir> <queue> <memory> <time> <threads>
-makeClusterFunctionsLSF("~/lsf-threaded.tmpl")
+#makeClusterFunctionsLSF("~/lsf-threaded.tmpl")
 
-oargs <- commandArgs(trailingOnly=TRUE)
-
-
-dbfile <- oargs[1]
-chunks <- oargs[2]
-out.dir <- oargs[3]
-queue <- oargs[4]
-memory <- as.integer(oargs[5])
-time <- oargs[6]
-threads <- as.integer(oargs[7])
+## oargs <- commandArgs(trailingOnly=TRUE)
 
 
+## dbfile <- oargs[1]
+## chunks <- as.integer(oargs[2])
+## out.dir <- oargs[3]
+## queue <- oargs[4]
+## memory <- as.integer(oargs[5])
+## time <- oargs[6]
+## threads <- as.integer(oargs[7])
 
-db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
 
-all.iters <- dbGetQuery(db,"select distinct eqtls.gene,Kfold from eqtls,ggenes where eqtls.gene=ggenes.Gene")
 
-dbDisconnect(db)
+## db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
+
+#system.time(all.iters <- dbGetQuery(db,"select distinct eqtls.gene,Kfold from eqtls,ggenes where eqtls.gene=ggenes.Gene"))
+## dbGetQuery(db,"pragma journal_mode=TRUNCATE")
+## dbDisconnect(db)
 
 
   
-all.iters <- lapply(chunk(1:nrow(all.iters),n.chunks=chunks),function(x)all.iters[x,])
+#all.iters <- lapply(chunk(1:nrow(all.iters),n.chunks=chunks),function(x)all.iters[x,])
 
 
 glm_predict <- function(t.iters,dbfile,threads){
@@ -78,9 +78,7 @@ glm_predict <- function(t.iters,dbfile,threads){
     }
     
   }
-  
-  nglm.engine <- cmpfun(glm.engine,options=list(optimize=3))
-  system.time(tt.res <- mdply(.data=t.iters,.fun=nglm.engine,.parallel=T,.paropts=list(.multicombine=T,.inorder=F,.verbose=F,.export=c("nglm.engine","dbfile"),.packages=c("glmnet","RSQLite","reshape2"))))
+  system.time(tt.res <- mdply(.data=t.iters,.fun=glm.engine,.parallel=T,.paropts=list(.multicombine=T,.inorder=F,.verbose=F,.export=c("glm.engine","dbfile"),.packages=c("glmnet","RSQLite","reshape2"))))
   tt.res <- tt.res[,c("Sample","Value","Gene")]
   return(tt.res)
     
@@ -97,6 +95,6 @@ glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","resh
 batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbfile=dbfile,threads=threads))
 
 
-submitJobs(glm.reg,resources=list(queue=queue,threads=threads,memory=memory,time=time))
+## submitJobs(glm.reg,resources=list(queue=queue,threads=threads,memory=memory,time=time))
 
-
+## Sys.sleep(10)

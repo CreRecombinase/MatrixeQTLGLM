@@ -4,8 +4,9 @@ library(plyr)
 library(RSQLite)
 library(BBmisc)
 library(doParallel)
+
 args <- list()
-##USAGE <RESULTS_DIR> <DATABSE_FILE> <KFOLD> <SAMPLE_NUM> <SAMPLE_FILE> <threads>
+##USAGE <RESULTS_DIR> <DATABSE_FILE> <KFOLD> <SAMPLE_NUM> <SAMPLE_FILE> <THREADS>
 
 oargs <- commandArgs(trailingOnly=TRUE)
 args$RESULTS_DIR <- oargs[1]
@@ -15,12 +16,13 @@ args$SAMPLE_NUM <- as.integer(oargs[4])
 args$SAMPLE_FILE <- oargs[5]
 args$THREADS <- as.integer(oargs[6])
 
-registerDoParallel(args$THREADS-1)
+
 
 eqtl.files <- dir(args$RESULTS_DIR,pattern="*.txt",full.names=T)
 kfolds <- as.integer(gsub(".+s([0-9]+).txt","\\1",eqtl.files))
 cis.transs <- gsub(".+(cis|trans)[0-9]+.txt","\\1",eqtl.files)
 
+if(FALSE){
 write.db.file <- function(eqtl.file,cis.trans,kfold,dbfile){
   db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
   dbGetQuery(db,"pragma busy_timeout=20000")
@@ -36,27 +38,24 @@ write.db.file <- function(eqtl.file,cis.trans,kfold,dbfile){
   dbWriteTable(db,name="eqtls",eqtl,row.names=F,append=T)
   dbDisconnect(db)
 }
-qtlargs <- data.frame(eqtl.file=eqtl.files,cis.trans=cis.transs,kfold=kfolds,dbfile=args$DATABASE_FILE)
-print(head(qtlargs))
+qtlargs <- data.frame(eqtl.file=eqtl.files,cis.trans=cis.transs,kfold=kfolds,dbfile=args$DATABASE_FILE,stringsAsFactors=F)
 
-m_ply(.data=qtlargs,.fun=write.db.file,.parallel=F,.paropts=list(.inorder=F,.export="write.db.file",.packages=c("RSQLite","sqldf")),.progress="text",.inform=T)
-
+m_ply(.data=qtlargs,.fun=write.db.file,.parallel=F,.paropts=list(.inorder=F,.export="write.db.file",.packages=c("RSQLite","sqldf")),.inform=F,.progress="text")
+}
 
 
 db <- dbConnect(drv=dbDriver("SQLite"),dbname=args$DATABASE_FILE)
-
-dbSendQuery(db,"Create index sgkc on eqtls(SNP,gene,Kfold,CisTrans)")
-dbSendQuery(db,"Create index gkc on eqtls(gene,Kfold,CisTrans)")
 #########get just eqtls that are in every cross validation
 #Subset on genes that have SOME prediction in every cross validation
-dbSendQuery(db,"create table ggenes as SELECT gene FROM (SELECT gene,count(distinct Kfold) from eqtls group by gene having count(distinct Kfold)>9)")
-distinct.genes <- dbGetQuery(db,"select distinct gene from ggenes")
-distinct.snps <- dbGetQuery(db,"select distinct SNP from eqtls,ggenes where eqtls.gene=ggenes.gene")
+#dbSendQuery(db,"create table ggenes as SELECT gene FROM (SELECT gene,count(distinct Kfold) from eqtls group by gene having count(distinct Kfold)>9)")
+#dbSendQuery(db,"create index g on ggenes(gene)")
+#distinct.genes <- dbGetQuery(db,"select distinct gene from ggenes")
+#distinct.snps <- dbGetQuery(db,"select distinct SNP from eqtls,ggenes where eqtls.gene=ggenes.gene")
 
 
 
-write.table(distinct.snps,file="eqtlsnps.txt",sep="\t",col.names=T,row.names=F,quote=F)
-write.table(distinct.genes,file="eqtlgenes.txt",sep="\t",col.names=T,row.names=F,quote=F)
+#write.table(distinct.snps,file="eqtlsnps.txt",sep="\t",col.names=T,row.names=F,quote=F)
+#write.table(distinct.genes,file="eqtlgenes.txt",sep="\t",col.names=T,row.names=F,quote=F)
 
 
 

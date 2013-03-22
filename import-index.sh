@@ -5,11 +5,12 @@ import=false
 index=false
 snps=false
 genes=false
+eqtls=false
 database=
 
 
 
-while getopts "ixsgf:d:" opt; do
+while getopts "ixsgef:d:" opt; do
     case $opt in 
 	i)
 
@@ -25,7 +26,9 @@ while getopts "ixsgf:d:" opt; do
 	    ;;
 	g)
 	    genes=true
-
+	    ;;
+	e)
+	    eqtls=true
 	    ;;
 	f)
 	    file=$OPTARG
@@ -42,13 +45,21 @@ while getopts "ixsgf:d:" opt; do
 done
 if $index; then
     if $snps; then
-	echo -e ".timeout 20000\npragma main.page_size=4096;pragma main.cache_size=10000; pragma synchronous=NORMAL;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index ss on snps(Snp,Sample);" > index_metafile_snps.sql
+	echo -e ".timeout 20000\npragma main.page_size=4096;pragma main.cache_size=10000; pragma synchronous=0;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index ss on snps(Snp,Sample);" > index_metafile_snps.sql
 	sqlite3 $database < index_metafile_snps.sql
 	rm index_metafile_snps.sql
 	else
-	echo -e ".timeout 20000 \npragma main.page_size=4096;pragma main.cache_size=10000; pragma synchronous=NORMAL;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index gs on gene(Gene,Sample);" > index_metafile_gene.sql
-	sqlite3 $database < index_metafile_gene.sql
-	rm index_metafile_gene.sql
+	if $genes; then
+	    echo -e ".timeout 20000 \npragma main.page_size=4096;pragma main.cache_size=10000; pragma synchronous=0;pragma main.journal_mode=WAL;pragma main.cache_size=5000; pragma temp_store=1;pragma temp_store_directory='.';create index gs on gene(Gene,Sample);" > index_metafile_gene.sql
+	    sqlite3 $database < index_metafile_gene.sql
+	    rm index_metafile_gene.sql
+	    else
+	    if $eqtls; then
+		echo -e ".timeout 20000\npragma main.page_size=4096;pragma main.cache_size=10000;pragma synchronous=0; pragma main.journal_mode=WAL;pragma main.cache_size=5000;pragma temp_stire=1;pragma temp_store_directory='.';create index sgkc on eqtls(Gene,Kfold);" > index_eqtlfile.sql
+		sqlite3 $database < index_eqtlfile.sql
+		rm index_eqtlfile.sql
+	    fi
+	fi
     fi
 elif $import; then
     if $snps; then
