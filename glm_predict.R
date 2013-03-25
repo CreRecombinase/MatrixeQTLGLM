@@ -77,20 +77,22 @@ glm_predict <- function(ot.iters,dbfile,threads,kfolds){
         tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
         npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=gene)
         cf <- as.matrix(coef(cv1,s=cv1$lambda.1se))
-        return(list(npred,cf))
+        return(list(pred=npred,coefs=cf,lambda=cv1$lambda.1se))
       }     
     }else{
       tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
       npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=gene)
-      cf <- as.matrix(coef(cv1,s=cv1$lamda.1se))
-      return(list(npred,cf))
+      cf <- as.matrix(coef(cv1,s=cv1$lambda.1se))
+      return(list(pred=npred,coefs=cf,lambda=cv1$lambda.1se))
      
     }
     
   }
 
   t.iters <- expand.grid(gene=ot.iters,Kfold=as.character(1:kfolds),stringsAsFactors=F)
-  system.time(tt.res <- mlply(.data=t.iters,.fun=glm.engine,.parallel=T,.inform=F,.paropts=list(.multicombine=T,.inorder=F,.verbose=F,.export=c("glm.engine","asnps","all.exp","eqtls","trainSamples","testSamples"),.packages=c("glmnet"))))
+  
+  
+  tt.res <- mlply(.data=t.iters,.fun=glm.engine,.parallel=T,.inform=F,.paropts=list(.multicombine=T,.inorder=F,.verbose=F,.export=c("glm.engine","asnps","all.exp","eqtls","trainSamples","testSamples"),.packages=c("glmnet")))
   return(tt.res)
     
 }
