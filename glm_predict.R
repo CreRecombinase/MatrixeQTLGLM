@@ -14,7 +14,7 @@ oargs <- commandArgs(trailingOnly=TRUE)
 
 dbfile <- oargs[1]
 chunks <- as.integer(oargs[2])
-max.kfold <- as.integer(oargs[3])
+max.kfolds <- as.integer(oargs[3])
 out.dir <- oargs[4]
 queue <- oargs[5]
 memory <- as.integer(oargs[6])
@@ -41,10 +41,11 @@ glm_predict <- function(ot.iters,dbfile,threads,kfolds){
     paste0("(",Reduce(function(x,y)paste(x,y,sep=","),items),")")
   }
   
-  
-  snps <- dbGetQuery(db,paste0("select SNP,gene,Kfold from eqtls where gene in ",create.set(ot.iters)))
-  all.exp <- acast(dbGetQuery(db,paste0("select * from gene where gene in ",create.set(ot.iters))),formula=Sample~Gene,value.var="Value")
-  nnsql <- paste0("select * from snps where Snp in ",create.set(unique(unlist(snpl))))
+  db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile,loadable.extensions=T)
+  snpsql <- "select SNP,gene,Kfold from eqtls where gene = :gene"
+  snps <- dbGetPreparedQuery(db,snpsql,data.frame(gene=ot.iters))
+  all.exp <- acast(dbGetQuery(db,paste0("select * from gene where Gene in ",create.set(ot.iters))),formula=Sample~Gene,value.var="Value")
+  nnsql <- paste0("select * from snps where Snp in ",create.set(unique(snps$SNP)))
   nnsnps <- dbGetQuery(db,nnsql)
   trainSamples <- dbGetQuery(db,"select Sample,Kfold from trainSamples")
   trainSamples <- split(trainSamples$Sample,trainSamples$Kfold)
@@ -75,14 +76,14 @@ glm_predict <- function(ot.iters,dbfile,threads,kfolds){
         }
         tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
         npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=gene)
-        cf <- as.matrix(coef(cv1.fit,s=cv1$lambda.1se))
+        cf <- as.matrix(coef(cv1,s=cv1$lambda.1se))
         return(list(npred,cf))
       }     
     }else{
       tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
       npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=gene)
       cf <- as.matrix(coef(cv1,s=cv1$lamda.1se))
-      return(list(npred,cf)))
+      return(list(npred,cf))
      
     }
     
@@ -102,7 +103,7 @@ m.dir <- tempfile("glm_res",tmpdir=out.dir)
 
 glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","reshape2","RSQLite","doParallel"))
 
-batchMap(glm.reg,fun=glm_predict,t.iters=all.iters,more.args=list(dbfile=dbfile,threads=threads,kfolds=max.kfolds))
+batchMap(glm.reg,fun=glm_predict,ot.iters=all.iters,more.args=list(dbfile=dbfile,threads=threads,kfolds=max.kfolds))
 
 
 ## submitJobs(glm.reg,resources=list(queue=queue,threads=threads,memory=memory,time=time))
