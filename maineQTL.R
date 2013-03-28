@@ -74,7 +74,7 @@ train.indices <- mapply(FUN=function(x,y)x[-y],train.indices,test.indices,SIMPLI
 MEQTL.params <- list(
   output.file.name.tra=paste(out.dir,args$OUT.FILES,"_trans",sep=""),
   output.file.name.cis=paste(out.dir,args$OUT.FILES,"_cis",sep=""),
-  useModel=modelLINEAR,
+  useModel=modelANOVA,
   verbose=T,
   pvOutputThreshold.tra=ifelse(args$CISTRA=="CISTRA",1e-8,0),
   pvOutputThreshold.cis=1e-8,
