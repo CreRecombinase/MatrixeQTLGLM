@@ -2,8 +2,9 @@
 library(reshape2)
 library(sqldf)
 library(BBmisc)
+library(RSQLite)
 
-###USAGE  FILE <SNPS|GENE> (if SNPS) <SNPCHUNKS> (IF SNPS) <ROWNUM> <MELTFILE>
+###USAGE  FILE <SNPS|GENE> (if SNPS) <CHUNK.SIZE> <DBFILE>
 
 args <- list()
 
@@ -14,10 +15,9 @@ args$FILE <- oargs[1]
 args$SNPSGENE <- oargs[2]
 if(args$SNPSGENE=="SNPS"){
   args$SNPCHUNKS=as.integer(oargs[3])
-  args$ROWNUM=as.integer(oargs[4])
-  args$MELTFILE=oargs[5]
+  args$DBFILE=oargs[4]
 }else if(args$SNPSGENE=="GENE"){
-  args$MELTFILE=oargs[3]
+  args$DBFILE=oargs[3]
 }else{
   stop(args)
 }
@@ -31,23 +31,43 @@ load.data.matrix <- function(filepath){
   colnames(rawdat)<- gsub("_","-",colnames(rawdat))
   return(data.matrix(rawdat))
 }
+db <- dbConnect(drv=dbDriver("SQLite"),dbname=args$DBFILE)
+dbGetQuery(db,"pragma main.page_size=4096")
+dbGetQuery(db,"pragma main.cache_size=50000")
+dbGetQuery(db,"pragma synchronous=0")
+dbGetQuery(db,"pragma journal_mode=memory")
+if(dbExistsTable(db,"snps")){
+  dbRemoveTable(db,"snps")
+}
+
 
 
 if(args$SNPSGENE=="GENE"){
   gene_melt <- melt(load.data.matrix(args$FILE))
-  write.table(gene_melt,file=args$MELTFILE,sep="\t",col.names=F,row.names=F,quote=F)
+  
+  dbWriteTable(db,"genes",gene_melt,row.names=F,append=F,overwrite=T)
   
 }else{
   snp.cols <- scan(args$FILE,what="character",nlines=1,sep="\t")[-1]
-  snp.chunks <- floor(seq(from=1,to=floor(args$ROWNUM-(args$ROWNUM/args$SNPCHUNKS)),length.out=args$SNPCHUNKS))
-  for(i in 1:length(snp.chunks)){
-    tsnp <- read.csv.sql(args$FILE,header=F,sep="\t",eol="\n",skip=snp.chunks[i],
-      sql=paste0("select * from file ", ifelse(i==length(snp.chunks),"",paste0("limit ",snp.chunks[i+1]-snp.chunks[i]))))
+  conn <- file(args$FILE,open="r")
+  ta <- read.table(conn,header=F,nrows=1)
+  tsnp <- read.table(conn,header=F,nrows=args$SNPCHUNKS,sep="\t",stringsAsFactors=F)
+  rownames(tsnp) <- tsnp[,1]
+  tsnp <- tsnp[,-1]
+  colnames(tsnp) <- snp.cols
+  tsnp <- data.matrix(tsnp)
+  ntsnp <- melt(tsnp)
+  colnames(ntsnp) <- c("SNP","Sample","Value")
+  dbWriteTable(db,"snps",ntsnp,row.names=F,append=T,overwrite=F)
+  while(nrow(tsnp)==args$SNPCHUNKS){
+    tsnp <- read.table(conn,header=F,nrows=args$SNPCHUNKS,sep="\t",stringsAsFactors=F)
     rownames(tsnp) <- tsnp[,1]
     tsnp <- tsnp[,-1]
     colnames(tsnp) <- snp.cols
     tsnp <- data.matrix(tsnp)
-    tsnp <- melt(tsnp)
-    write.table(tsnp,file=args$MELTFILE,sep="\t",col.names=F,row.names=F,quote=F,append=T)
+    ntsnp <- melt(tsnp)
+    colnames(ntsnp) <- c("SNP","Sample","Value")
+    dbWriteTable(db,"snps",ntsnp,row.names=F,append=T,overwrite=F)
   }
 }
+dbDisconnect(db)

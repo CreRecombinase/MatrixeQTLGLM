@@ -22,7 +22,7 @@ eqtl.files <- dir(args$RESULTS_DIR,pattern="*.txt",full.names=T)
 kfolds <- as.integer(gsub(".+s([0-9]+).txt","\\1",eqtl.files))
 cis.transs <- gsub(".+(cis|trans)[0-9]+.txt","\\1",eqtl.files)
 
-if(FALSE){
+if(TRUE){
 write.db.file <- function(eqtl.file,cis.trans,kfold,dbfile){
   db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
   dbGetQuery(db,"pragma busy_timeout=20000")

@@ -77,13 +77,13 @@ glm_predict <- function(ot.iters,dbfile,threads,kfolds){
         tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
         npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=gene)
         cf <- as.matrix(coef(cv1,s=cv1$lambda.1se))
-        return(list(pred=npred,coefs=cf,lambda=cv1$lambda.1se))
+        return(list(pred=npred,coefs=cf,lambda=cv1$lambda.1se,max.cvm=max(cv1$cvm),min.cvm=min(cv1$cvm)))
       }     
     }else{
       tpred <- predict(cv1,newx=snp.test,s=cv1$lambda.1se)
       npred <- data.frame(Sample=rownames(tpred),Value=tpred[,1],Gene=gene)
       cf <- as.matrix(coef(cv1,s=cv1$lambda.1se))
-      return(list(pred=npred,coefs=cf,lambda=cv1$lambda.1se))
+      return(list(pred=npred,coefs=cf,lambda=cv1$lambda.1se,max.cvm=max(cv1$cvm),min.cvm=min(cv1$cvm)))
      
     }
     
@@ -108,6 +108,6 @@ glm.reg <- makeRegistry("glmreg",file.dir=m.dir,packages=c("glmnet","plyr","resh
 batchMap(glm.reg,fun=glm_predict,ot.iters=all.iters,more.args=list(dbfile=dbfile,threads=threads,kfolds=max.kfolds))
 
 
-## submitJobs(glm.reg,resources=list(queue=queue,threads=threads,memory=memory,time=time))
+submitJobs(glm.reg,resources=list(queue=queue,threads=threads,memory=memory,time=time))
 
-## Sys.sleep(10)
+Sys.sleep(10)

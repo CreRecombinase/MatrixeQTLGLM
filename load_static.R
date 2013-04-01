@@ -59,7 +59,7 @@ save(annolist,file=args$dpath)
   if(args$MEQTL=="T"){
     snp.exp[["snps"]] <- SlicedData$new()
     snp.exp[["snps"]]$fileDelimiter <- "\t"
-    snp.exp[["snps"]]$fileOmitCharacters <- "null"
+    snp.exp[["snps"]]$fileOmitCharacters <- "-1"
     snp.exp[["snps"]]$fileSkipRows <- 1
     snp.exp[["snps"]]$fileSkipColumns <- 1
     snp.exp[["snps"]]$LoadFile(args$SNP)
