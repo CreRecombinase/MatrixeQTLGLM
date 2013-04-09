@@ -4,19 +4,28 @@ library(RSQLite)
 library(reshape2)
 library(sqldf)
 library(boot)
+library(fastmatch)
 library(RcppArmadillo)
+library(BatchJobs)
 
 setwd("/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/positive/overall/")
 eqtl.file <- "unimputed_positive_trans.txt"
 dbfile <- "overall_positive_linear.db"
 pos.neg <- "Positive"
-n.chunks <- 200
-
+out.dir <- "."
+n.chunks <- 500
 
 trans.eqtl <- read.csv.sql(eqtl.file,header=T,sep="\t",eol="\n")
 
 
-a.chunks <- lapply(chunk(1:nrow(trans.eqtl),n.chunks=n.chunks),function(x)as.matrix(trans.eqtl[x,c("SNP","gene")]))
+
+ntrans.eqtl <- trans.eqtl[ trans.eqtl$snpnum>12,]
+ntrans.eqtl <- ntrans.eqtl[ ntrans.eqtl$genenum>20,]
+
+
+
+
+a.chunks <- lapply(chunk(1:nrow(ntrans.eqtl),n.chunks=n.chunks),function(x)as.matrix(ntrans.eqtl[x,c("SNP","gene")]))
 
 
 boot.ts <- function(t.chunks,dbname){
@@ -49,14 +58,17 @@ boot.ts <- function(t.chunks,dbname){
     }
     return(boot.ci(nboot,type="perc")$percent[4])
   }
-  ats <- mapply(FUN=gen.t.stats,SNP=t.chunks[,"SNP"],gene=t.chunks[,"gene"])
   
-  return(ats)
+  
+
+    
+  system.time(nats <- mdply(.data=t.chunks,.fun=gen.t.stats,.progress="time"))  
+  return(nats)
   
 }
 m.dir <- tempfile(paste("boot_res_",pos.neg,sep=""),tmpdir=out.dir)
 registry.name <- paste("boot_res_",pos.neg,sep="")
-boot.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("RSQLite","fastmatch","RcppArmadillo","boot","reshape2"))
+boot.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("RSQLite","fastmatch","RcppArmadillo","boot","reshape2","plyr"))
 
 batchMap(boot.reg,t.chunks =a.chunks,fun=boot.ts,more.args=list(dbname=dbfile))
 
