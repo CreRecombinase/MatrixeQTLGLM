@@ -8,14 +8,30 @@ library(fastmatch)
 library(RcppArmadillo)
 library(BatchJobs)
 
-setwd("/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/positive/overall/")
-eqtl.file <- "unimputed_positive_trans.txt"
-dbfile <- "overall_positive_linear.db"
-pos.neg <- "Positive"
+setwd("/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/negative/overall/")
+eqtl.file <- "unimputed_negative_trans.txt"
+dbfile <- "overall.db"
+pos.neg <- "Negative"
 out.dir <- "."
 n.chunks <- 500
 
 trans.eqtl <- read.csv.sql(eqtl.file,header=T,sep="\t",eol="\n")
+
+# asnps <- dbReadTable(db,"snps")
+# agenes <- dbReadTable(db,"gene")
+# 
+# asnps <- acast(asnps,SNP~Sample)
+# agenes <- acast(agenes,Gene~Sample)
+# asnpnum <- apply(asnps,1,function(x)sum(sort(tabulate(x+1),decreasing=T)[-1]))
+# agenenm <- apply(agenes,1,function(x)sum(x>0))
+# 
+
+# trans.eqtl$snpnum <- asnpnum[ fmatch(trans.eqtl$SNP,names(asnpnum))]
+# trans.eqtl$genenum <- agenenm[ fmatch(trans.eqtl$gene,names(agenenm))]
+# 
+# 
+# write.table(trans.eqtl,file=eqtl.file,sep="\t",col.names=T,row.names=F,quote=F)
+# 
 
 
 
@@ -45,6 +61,7 @@ boot.ts <- function(t.chunks,dbname){
   gen.boot <- function(data,indices){
     data <- data[indices,]
     tf <- fastLmPure(data[,"snpval",drop=F],data[,"geneval"])
+    ntf <- fastLmPure(cbind(rep(1,nrow(data)),data[,"snpval"]),data[,"geneval"])
     return(tf$coefficients[1]/tf$stderr[1])
   }
   
