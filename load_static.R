@@ -33,7 +33,7 @@ if(args$EXPANNO=="ANNO"){
 load.data.matrix <- function(filepath){
   #Reads in data matrices
   rawdat <- read.csv.sql(filepath,sep="\t",header=T,eol="\n")
-  rawdat <- rawdat[!duplicated(rdat[,1]),]
+  rawdat <- rawdat[!duplicated(rawdat[,1]),]
   rownames(rawdat)<- rawdat[,1]
   rawdat <- rawdat[,-1]
   rawdat <- data.matrix(rawdat)
