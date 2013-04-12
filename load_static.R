@@ -67,9 +67,11 @@ save(annolist,file=args$dpath)
     snp.exp[["gene"]] <- SlicedData$new(load.data.matrix(args$EXP)) 
     sargs <- scan(args$SNP,what="character",nlines=1,sep="\n")
     sargs <- strsplit(sargs,split="\t")[[1]]
+    sargs <- substr(sargs,1,16)
     sargs <- sargs[-1]
     expargs <- scan(args$EXP,what="character",nlines=1,sep="\n")
     expargs <- strsplit(expargs,split="\t")[[1]]
+    expargs <- substr(expargs,1,16)
     expargs <- expargs[-1]
     snp.exp[["snps"]]$ColumnSubsample(match(expargs,sargs,nomatch=0))
     
