@@ -84,6 +84,7 @@ save(annolist,file=args$dpath)
     expargs <- strsplit(expargs,split="\t")[[1]]
     expargs <- expargs[-1]
     snp.exp[["snps"]]$ColumnSubsample(match(expargs,sargs,nomatch=0))
+    snp.exp[["snps"]]$RowReorder(which(!duplicated(snp.exp[["snps"]]$GetAllRowNames())))
   }
   save(snp.exp,file=args$dpath)
 }
