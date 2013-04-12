@@ -70,7 +70,7 @@ save(annolist,file=args$dpath)
     expargs <- scan(args$EXP,what="character",nlines=1,sep="\n")
     expargs <- strsplit(expargs,split="\t")[[1]]
     expargs <- expargs[-1]
-    snp.exp[["snps"]]$ColumnSubsample(match(expargs,sargs))
+    snp.exp[["snps"]]$ColumnSubsample(match(expargs,sargs,nomatch=0))
     
     
   }else{
@@ -82,7 +82,7 @@ save(annolist,file=args$dpath)
     expargs <- scan(args$EXP,what="character",nlines=1,sep="\n")
     expargs <- strsplit(expargs,split="\t")[[1]]
     expargs <- expargs[-1]
-    snp.exp[["snps"]]$ColumnSubsample(match(expargs,sargs))
+    snp.exp[["snps"]]$ColumnSubsample(match(expargs,sargs,nomatch=0))
   }
   save(snp.exp,file=args$dpath)
 }
