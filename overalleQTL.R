@@ -1,18 +1,19 @@
 #Code to run a single overall MatrixEQTL (without covariates)
 #3/8/13
 #NWK
+#Usage CANCER TYPE  
 library(MatrixEQTL)
 oargs <- commandArgs(trailingOnly=T)
 snp.type <- "unimputed"
 cancer.type <- oargs[1]
-root.dir <- paste0("/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/",oargs[1],"/")
+root.dir <- paste0("/scratch/nwk2/pancan/")
 out.dir <- paste0(root.dir,"output/")
 
 setwd(root.dir)
 
 
-annofile <- paste0("RNAseq_",oargs[1],".Rdata")
-snp.expdata <- "rnaseq_brca_anno.Rdata"
+annofile <- paste0("rnaseq_snp_anno.Rdata")
+snp.expdata <- paste0(oargs[1],".Rdata")
   
 MEQTL.params <- list(
   output.file.name.tra=paste(out.dir,snp.type,"_",cancer.type,"_trans",sep=""),
