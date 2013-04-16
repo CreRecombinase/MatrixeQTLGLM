@@ -34,15 +34,17 @@ eqtl.dat$genenum <- agenenm[ fmatch(eqtl.dat$gene,names(agenenm))]
 
 write.table(eqtl.dat,file=eqtl.file,sep="\t",col.names=T,row.names=F,quote=F,append=F)
 
+dbfile <- paste0(ctype,"_",TC,".db")
+db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
 bsnp <- melt(snps)
 colnames(bsnp) <- c("Snp","Sample","Value")
 dbGetQuery(db,"pragma journal_mode=memory")
 dbGetQuery(db,"pragma synchronous=0")
 dbGetQuery(db,"pragma cache_size=250000")
 dbWriteTable(db,"snps",bsnp)
-dbGetQuery(db,"pragma temp_store=1")
-dbGetQuery(db,"pragma temp_store_directory='.'")
-dbGetQuery(db,"create index ss on snps(Snp,Sample")
+#dbGetQuery(db,"pragma temp_store=1")
+#dbGetQuery(db,"pragma temp_store_directory='.'")
+#dbGetQuery(db,"create index ss on snps(Snp,Sample")
 
 rm(bsnp)
 gc()
@@ -50,11 +52,11 @@ gc()
 bexp <- melt(exp)
 colnames(exp) <- c("Gene","Sample","Value")
 dbWriteTable(db,"gene",bexp,row.names=F)
+dbDisconnect(db)
+system(paste0("~/glm_eqtl/MatrixeQTLGLM/import-index.sh -x -g -d ",dbfile))
+system(paste0("~/glm_eqtl/MatrixeQTLGLM/import-index.sh -x -s -d ",dbfile))
 
-dbGetQuery(db,"create index gs on gene(Gene,Sample)")
 
-
-dbDisconnect()
 
 
 
