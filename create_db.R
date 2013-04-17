@@ -30,7 +30,7 @@ asnpnum <- apply(snps,1,function(x)sum(sort(tabulate(x+1),decreasing=T)[-1]))
 agenenum <- apply(exp,1,function(x)sum(x!=0))
 
 eqtl.dat$snpnum <- asnpnum[ fmatch(eqtl.dat$SNP,names(asnpnum))]
-eqtl.dat$genenum <- agenenm[ fmatch(eqtl.dat$gene,names(agenenm))]
+eqtl.dat$genenum <- agenenum[ fmatch(eqtl.dat$gene,names(agenenum))]
 
 write.table(eqtl.dat,file=eqtl.file,sep="\t",col.names=T,row.names=F,quote=F,append=F)
 
