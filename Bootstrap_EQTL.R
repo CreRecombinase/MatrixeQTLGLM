@@ -7,38 +7,31 @@ library(boot)
 library(fastmatch)
 library(RcppArmadillo)
 library(BatchJobs)
+#usage CTYPE cis|trans
 
-setwd("/scratch/nwk2/mEQTL_ERpnc/glmEQTL/brca_RNAseq/negative/overall/")
-eqtl.file <- "unimputed_negative_trans.txt"
-dbfile <- "overall.db"
-pos.neg <- "Negative"
-out.dir <- "."
-n.chunks <- 500
+
+args <- list()
+oargs <- commandArgs(trailingOnly=T)
+args$CTYPE <- oargs[1]
+args$CT <- oargs[2]
+args$QUEUE <- oargs[3]
+args$MEMORY <- oargs[4]
+args$TIME <- oargs[5]
+
+setwd("/scratch/nwk2/pancan")
+eqtl.file <- paste0("output/unimputed_",args$CTYPE,"_",args$CT,".txt")
+dbfile <- paste0(args$CTYPE,"_",args$CT,".db")
+out.dir <- "output/"
+chunk.size <- 60000
 
 trans.eqtl <- read.csv.sql(eqtl.file,header=T,sep="\t",eol="\n")
 
-# asnps <- dbReadTable(db,"snps")
-# agenes <- dbReadTable(db,"gene")
-# 
-# asnps <- acast(asnps,SNP~Sample)
-# agenes <- acast(agenes,Gene~Sample)
-# asnpnum <- apply(asnps,1,function(x)sum(sort(tabulate(x+1),decreasing=T)[-1]))
-# agenenm <- apply(agenes,1,function(x)sum(x>0))
-# 
+db <- dbConnect(drv=dbDriver("SQLite"),dbname=dbfile)
+ctdb <- dbGetQuery(db,"select count (*) from (select * from snps where Snp=(select Snp from snps limit 1))")[[1]]
+dbDisconnect(db)
 
-# trans.eqtl$snpnum <- asnpnum[ fmatch(trans.eqtl$SNP,names(asnpnum))]
-# trans.eqtl$genenum <- agenenm[ fmatch(trans.eqtl$gene,names(agenenm))]
-# 
-# 
-# write.table(trans.eqtl,file=eqtl.file,sep="\t",col.names=T,row.names=F,quote=F)
-# 
-
-
-
-ntrans.eqtl <- trans.eqtl[ trans.eqtl$snpnum>12,]
-ntrans.eqtl <- ntrans.eqtl[ ntrans.eqtl$genenum>20,]
-
-
+ntrans.eqtl <- trans.eqtl[ (trans.eqtl$snpnum/ctdb)>.03,]
+ntrans.eqtl <- ntrans.eqtl[ (ntrans.eqtl$genenum/ctdb)>.04,]
 
 
 a.chunks <- lapply(chunk(1:nrow(ntrans.eqtl),n.chunks=n.chunks),function(x)as.matrix(ntrans.eqtl[x,c("SNP","gene")]))
@@ -79,19 +72,17 @@ boot.ts <- function(t.chunks,dbname){
   
 
     
-  system.time(nats <- mdply(.data=t.chunks,.fun=gen.t.stats,.progress="time"))  
+  nats <- mdply(.data=t.chunks,.fun=gen.t.stats,.progress="time")
   return(nats)
   
 }
-m.dir <- tempfile(paste("boot_res_",pos.neg,sep=""),tmpdir=out.dir)
-registry.name <- paste("boot_res_",pos.neg,sep="")
+m.dir <- tempfile(paste("boot_res_",args$CTYPE,"_",args$CT,sep=""),tmpdir=out.dir)
+registry.name <- paste("boot_res_",args$CTYPE,"_",args$CT,sep="")
 boot.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("RSQLite","fastmatch","RcppArmadillo","boot","reshape2","plyr"))
 
 batchMap(boot.reg,t.chunks =a.chunks,fun=boot.ts,more.args=list(dbname=dbfile))
 
+submitJobs(boot.reg,jobs)
 
-#submitJobs(MEQTL.reg,resources=list(queue=args$QUEUE,memory=args$MEMORY,time=args$TIME,threads=1))
-
-
-
+submitJobs(boot.reg,resources=list(queue=args$QUEUE,memory=args$MEMORY,time=args$TIME,threads=1))
 
