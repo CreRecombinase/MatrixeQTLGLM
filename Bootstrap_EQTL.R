@@ -7,7 +7,7 @@ library(boot)
 library(fastmatch)
 library(RcppArmadillo)
 library(BatchJobs)
-#usage CTYPE cis|trans
+#usage CTYPE cis|trans Queue Memory Time
 
 
 args <- list()
@@ -22,7 +22,7 @@ setwd("/scratch/nwk2/pancan")
 eqtl.file <- paste0("output/unimputed_",args$CTYPE,"_",args$CT,".txt")
 dbfile <- paste0(args$CTYPE,"_",args$CT,".db")
 out.dir <- "output/"
-chunk.size <- 60000
+chunk.size <- 15000
 
 trans.eqtl <- read.csv.sql(eqtl.file,header=T,sep="\t",eol="\n")
 
@@ -34,7 +34,7 @@ ntrans.eqtl <- trans.eqtl[ (trans.eqtl$snpnum/ctdb)>.03,]
 ntrans.eqtl <- ntrans.eqtl[ (ntrans.eqtl$genenum/ctdb)>.04,]
 
 
-a.chunks <- lapply(chunk(1:nrow(ntrans.eqtl),n.chunks=n.chunks),function(x)as.matrix(ntrans.eqtl[x,c("SNP","gene")]))
+a.chunks <- lapply(chunk(1:nrow(ntrans.eqtl),chunk.size=chunk.size),function(x)as.matrix(ntrans.eqtl[x,c("SNP","gene")]))
 
 
 boot.ts <- function(t.chunks,dbname){
@@ -43,9 +43,9 @@ boot.ts <- function(t.chunks,dbname){
   gene.mat <- dbGetPreparedQuery(db,gene.sql,data.frame(gen=unique(t.chunks[,"gene"])))
   gene.mat <- acast(gene.mat,Gene~Sample,value.var="Value")
   
-  snp.sql <- "select * from snps where SNP=:sn"
+  snp.sql <- "select * from snps where Snp=:sn"
   snp.mat <- dbGetPreparedQuery(db,snp.sql,data.frame(sn=unique(t.chunks[,"SNP"])))
-  snp.mat <- acast(snp.mat,SNP~Sample,value.var="Value")
+  snp.mat <- acast(snp.mat,Snp~Sample,value.var="Value")
   
   srn <- rownames(snp.mat)
   grn <- rownames(gene.mat)
@@ -54,7 +54,6 @@ boot.ts <- function(t.chunks,dbname){
   gen.boot <- function(data,indices){
     data <- data[indices,]
     tf <- fastLmPure(data[,"snpval",drop=F],data[,"geneval"])
-    ntf <- fastLmPure(cbind(rep(1,nrow(data)),data[,"snpval"]),data[,"geneval"])
     return(tf$coefficients[1]/tf$stderr[1])
   }
   
@@ -81,8 +80,6 @@ registry.name <- paste("boot_res_",args$CTYPE,"_",args$CT,sep="")
 boot.reg <- makeRegistry(registry.name,file.dir=m.dir,packages=c("RSQLite","fastmatch","RcppArmadillo","boot","reshape2","plyr"))
 
 batchMap(boot.reg,t.chunks =a.chunks,fun=boot.ts,more.args=list(dbname=dbfile))
-
-submitJobs(boot.reg,jobs)
 
 submitJobs(boot.reg,resources=list(queue=args$QUEUE,memory=args$MEMORY,time=args$TIME,threads=1))
 
